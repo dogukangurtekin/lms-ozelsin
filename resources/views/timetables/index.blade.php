@@ -213,7 +213,7 @@
                 <button class="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm">Programlari Listele</button>
             </form>
 
-            <div class="mt-4 grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <div class="mt-4 space-y-4">
                 <div class="rounded-xl border border-slate-200 p-3 overflow-x-auto">
                     <h4 class="font-semibold text-slate-800 mb-2">Ogretmen Programi (Tablo)</h4>
                     @if($selectedTeacherId > 0)

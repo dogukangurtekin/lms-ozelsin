@@ -15,9 +15,9 @@
             @if(auth()->user()->hasRole('admin'))
                 <section class="rounded-2xl border border-slate-200 bg-white p-4">
                     <h3 class="font-semibold text-slate-800">Gönderim Numarası</h3>
-                    <form method="POST" action="{{ route('whatsapp.settings.update') }}" class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                    <form method="POST" action="{{ route('whatsapp.settings.update') }}" class="mt-3 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_220px] gap-3 md:items-start">
                         @csrf
-                        <div class="md:col-span-2">
+                        <div>
                             <label class="block text-sm text-slate-600 mb-1">Gönderilecek WhatsApp Numarası</label>
                             @php
                                 $senderDigits = preg_replace('/\D/', '', (string) ($senderPhone ?? '')) ?? '';
@@ -36,7 +36,7 @@
                             </div>
                             <p class="mt-1 text-xs text-slate-500">Sadece numarayı girin. Sistem otomatik olarak +90 ekler.</p>
                         </div>
-                        <div>
+                        <div class="md:pt-6">
                             <button class="w-full rounded-lg px-4 py-2 text-sm font-semibold" style="background:#0f172a;color:#fff;border:1px solid #0f172a;">
                                 Numarayı Kaydet
                             </button>

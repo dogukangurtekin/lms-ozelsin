@@ -186,6 +186,8 @@ class TimetableController extends Controller
 
     public function store(Request $request)
     {
+        $hasLessonShortName = \Illuminate\Support\Facades\Schema::hasColumn('lessons', 'short_name');
+
         $data = $request->validate([
             'class_id' => 'required|exists:classes,id',
             'teacher_id' => 'required|exists:users,id',
@@ -316,6 +318,7 @@ class TimetableController extends Controller
 
     public function import(Request $request)
     {
+        $hasLessonShortName = \Illuminate\Support\Facades\Schema::hasColumn('lessons', 'short_name');
         $gridClassId = (int) $request->input('grid_class_id', 0);
         $rows = $this->extractRowsFromRequest($request);
         if (empty($rows)) {
