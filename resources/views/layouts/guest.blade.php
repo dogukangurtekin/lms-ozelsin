@@ -14,25 +14,26 @@
 </head>
 <body class="font-sans antialiased lms-bg-auth">
     <div class="min-h-screen grid lg:grid-cols-2">
-        <section class="hidden lg:flex flex-col justify-between p-12 text-white lms-auth-side">
-            <div class="flex items-center gap-3">
-                <img src="{{ asset('assets/logo.png') }}" alt="LMS Logo" class="h-12 w-12 rounded-xl bg-white p-1 object-contain">
+        <section class="hidden lg:flex flex-col justify-between p-12 text-white lms-auth-side" style="background: linear-gradient(160deg, #2f4f75 0%, #2aa39a 80%);">
+            <div class="flex-1 flex flex-col items-center justify-center text-center gap-4">
+                <img src="{{ asset('assets/logo.png') }}" alt="Özelsin Eğitim Platformu Logosu" class="object-contain mx-auto" style="width:200px;height:200px;">
                 <div>
-                    <p class="text-lg font-semibold">OzelSin LMS</p>
-                    <p class="text-xs text-white/80">Akilli Egitim Yonetim Sistemi</p>
+                    <p class="text-3xl font-bold tracking-tight">Özelsin Eğitim Platformu</p>
+                    <p class="text-sm text-white/85 mt-1">Akıllı Eğitim Yönetim Sistemi</p>
                 </div>
             </div>
-            <div>
-                <h1 class="text-3xl font-bold leading-tight">Tek platformda odev, kitap, gorusme ve veli iletisimi.</h1>
-                <p class="mt-4 text-sm text-white/80">Okulunuzun tum sureclerini guvenli ve olceklenebilir bir yapiyla yonetin.</p>
+            <div class="text-center">
+                <h1 class="text-lg font-semibold leading-tight text-white/95">Tek platformda ödev, kitap, görüşme ve veli iletişimi.</h1>
+                <p class="mt-2 text-sm text-white/80">Okulunuzun tüm süreçlerini güvenli ve ölçeklenebilir bir yapıyla yönetin.</p>
             </div>
-            <p class="text-xs text-white/70">© {{ date('Y') }} OzelSin LMS</p>
+            <p class="text-xs text-white/70">© {{ date('Y') }} Özelsin Eğitim Platformu</p>
         </section>
 
         <section class="flex items-center justify-center p-6 sm:p-8">
             <div class="w-full max-w-md">
-                <div class="lg:hidden mb-6 flex justify-center">
-                    <img src="{{ asset('assets/logo.png') }}" alt="LMS Logo" class="h-14 w-14 rounded-xl bg-white p-1 object-contain shadow">
+                <div class="lg:hidden mb-6 flex flex-col items-center gap-2">
+                    <img src="{{ asset('assets/logo.png') }}" alt="Özelsin Eğitim Platformu Logosu" class="object-contain mx-auto" style="width:200px;height:200px;">
+                    <p class="text-base font-semibold text-slate-800 text-center">Özelsin Eğitim Platformu</p>
                 </div>
                 <div class="lms-auth-card">
                     {{ $slot }}

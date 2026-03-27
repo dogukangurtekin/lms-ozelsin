@@ -8,10 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class WhatsappLog extends Model
 {
     protected $fillable = [
-        'message_id', 'provider', 'provider_message_id', 'receiver_phone', 'status', 'response_payload', 'error_message', 'sent_at'
+        'message_id', 'provider', 'provider_message_id', 'receiver_phone', 'sender_phone', 'scheduled_for', 'status', 'response_payload', 'error_message', 'sent_at'
     ];
 
-    protected $casts = ['sent_at' => 'datetime'];
+    protected $casts = [
+        'scheduled_for' => 'datetime',
+        'sent_at' => 'datetime',
+    ];
 
     public function message(): BelongsTo
     {

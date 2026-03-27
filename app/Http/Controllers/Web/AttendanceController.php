@@ -34,7 +34,52 @@ class AttendanceController extends Controller
         }
 
         $schedules = $scheduleQuery->get();
-        $selectedSchedule = $schedules->firstWhere('id', (int) $request->input('schedule_id')) ?? $schedules->first();
+
+        if ($schedules->isNotEmpty()) {
+            foreach ($schedules as $schedule) {
+                AttendanceSession::firstOrCreate(
+                    [
+                        'schedule_id' => $schedule->id,
+                        'attendance_date' => $date,
+                    ],
+                    [
+                        'teacher_id' => $schedule->teacher_id,
+                        'class_id' => $schedule->class_id,
+                        'lesson_name' => $schedule->lesson_name,
+                        'taken_at' => null,
+                    ]
+                );
+            }
+        }
+
+        $sessionByScheduleId = AttendanceSession::query()
+            ->whereDate('attendance_date', $date)
+            ->whereIn('schedule_id', $schedules->pluck('id'))
+            ->get()
+            ->keyBy('schedule_id');
+
+        $selectedSchedule = null;
+        if ($request->filled('schedule_id')) {
+            $selectedSchedule = $schedules->firstWhere('id', (int) $request->input('schedule_id'));
+        } elseif ($date === now()->toDateString()) {
+            $nowTime = now()->format('H:i');
+            $selectedSchedule = $schedules
+                ->filter(function ($schedule) use ($nowTime) {
+                    $start = substr((string) $schedule->start_time, 0, 5);
+                    $end = $schedule->end_time ? substr((string) $schedule->end_time, 0, 5) : null;
+                    if (! $start) {
+                        return false;
+                    }
+                    if ($end) {
+                        return $start <= $nowTime && $nowTime <= $end;
+                    }
+                    return $start <= $nowTime;
+                })
+                ->sortByDesc('start_time')
+                ->first();
+        }
+
+        $selectedSchedule = $selectedSchedule ?? $schedules->first();
 
         $students = collect();
         $statusByStudentId = [];
@@ -73,6 +118,7 @@ class AttendanceController extends Controller
             'dayOfWeek',
             'schedules',
             'selectedSchedule',
+            'sessionByScheduleId',
             'students',
             'statusByStudentId',
             'session',

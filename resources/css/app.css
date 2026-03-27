@@ -1,8 +1,83 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+    html {
+        -webkit-text-size-adjust: 100%;
+        overflow-x: hidden;
+        overflow-x: clip;
+    }
+
+    body {
+        overflow-x: hidden;
+        overflow-x: clip;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+        font-family: inherit;
+    }
+
+    img,
+    svg,
+    video,
+    canvas {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+.lms-page-title,
+.lms-page-title * {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+    font-size: 17px !important;
+    line-height: 1.35 !important;
+    font-weight: 400 !important;
+}
+
+.lms-page-title > * {
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+    font-weight: inherit !important;
+}
+
 @layer components {
+    .lms-action-btn {
+        @apply inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium border transition whitespace-nowrap;
+    }
+
+    .lms-action-btn.view {
+        @apply bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700;
+    }
+
+    .lms-action-btn.info {
+        @apply bg-sky-600 text-white border-sky-700 hover:bg-sky-700;
+    }
+
+    .lms-action-btn.edit {
+        @apply bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-700;
+    }
+
+    .lms-action-btn.delete {
+        @apply bg-rose-600 text-white border-rose-700 hover:bg-rose-700;
+    }
+
+    .lms-sidebar-brand {
+        height: 4rem;
+        padding: 0 1.25rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #e2e8f0;
+        flex-shrink: 0;
+    }
+
     .lms-bg-auth {
         background: linear-gradient(135deg, #e0f2fe 0%, #f8fafc 35%, #ecfeff 100%);
     }
@@ -74,14 +149,125 @@
     }
 }
 
-@media (max-width: 640px) {
+/* Mobile-first defaults (320px+) */
+main :is(button, [type='button'], [type='submit'], [type='reset']):not(.lms-action-btn) {
+    min-height: 2.75rem;
+}
+
+.lms-action-btn {
+    min-height: 0 !important;
+    height: 2rem;
+    line-height: 1;
+}
+
+main form :is(input:not([type='checkbox']):not([type='radio']), select, textarea) {
+    width: 100%;
+    max-width: 100%;
+}
+
+main input[type='checkbox'],
+main input[type='radio'] {
+    width: 1rem;
+    min-width: 1rem;
+    height: 1rem;
+    flex: 0 0 auto;
+}
+
+main table {
+    width: 100%;
+}
+
+main,
+main > *,
+main section,
+main .grid,
+main .flex {
+    min-width: 0;
+}
+
+main .mobile-table-wrap,
+main .overflow-x-auto {
+    max-width: 100%;
+}
+
+@media (max-width: 480px) {
+    .lms-auth-card {
+        border-radius: 1rem;
+        padding: 1rem;
+    }
+
     .lms-panel,
     .lms-stat-card {
         padding: 0.875rem;
+        border-radius: 1rem;
     }
 
     .lms-table th,
     .lms-table td {
         white-space: nowrap;
+    }
+
+    main {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .lms-table th,
+    .lms-table td {
+        white-space: nowrap;
+    }
+
+    .mobile-stack {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .stack-list-mobile thead {
+        display: none;
+    }
+
+    .stack-list-mobile tbody,
+    .stack-list-mobile tr,
+    .stack-list-mobile td {
+        display: block;
+        width: 100%;
+    }
+
+    .stack-list-mobile tbody {
+        border: 0;
+    }
+
+    .stack-list-mobile tr {
+        border: 1px solid #e2e8f0;
+        border-radius: 0.75rem;
+        background: #fff;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.625rem;
+    }
+
+    .stack-list-mobile td {
+        white-space: normal !important;
+        padding: 0.3rem 0;
+        border: 0 !important;
+        text-align: left !important;
+    }
+}
+
+@media (min-width: 768px) {
+    .tablet-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    .desktop-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
     }
 }

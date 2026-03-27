@@ -27,6 +27,7 @@ class TimetableController extends Controller
 
     public function index(Request $request)
     {
+        $hasLessonShortName = \Illuminate\Support\Facades\Schema::hasColumn('lessons', 'short_name');
         $settings = $this->getOrCreateSettings();
         $dayOptions = collect(self::DAY_LABELS)->map(fn ($name, $id) => ['id' => $id, 'name' => $name])->values();
 
@@ -61,7 +62,8 @@ class TimetableController extends Controller
             ->orderBy('name')
             ->get();
 
-        $lessons = Lesson::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']);
+        $lessonSelect = $hasLessonShortName ? ['id', 'name', 'short_name'] : ['id', 'name'];
+        $lessons = Lesson::query()->where('is_active', true)->orderBy('name')->get($lessonSelect);
 
         $slots = TeacherSchedule::query()
             ->with(['teacher:id,name', 'lesson:id,name'])
@@ -228,7 +230,7 @@ class TimetableController extends Controller
             [
                 'teacher_id' => $teacherId,
                 'lesson_id' => $lesson->id,
-                'lesson_name' => $lesson->name,
+                'lesson_name' => ($hasLessonShortName ? ($lesson->short_name ?: $lesson->name) : $lesson->name),
                 'start_time' => $start,
                 'end_time' => $end,
                 'is_active' => true,
@@ -329,7 +331,16 @@ class TimetableController extends Controller
             ->whereHas('roles', fn ($q) => $q->where('name', 'teacher'))
             ->get(['id', 'name'])
             ->keyBy(fn ($t) => mb_strtolower(trim((string) $t->name)));
-        $lessonsByName = Lesson::query()->where('is_active', true)->get(['id', 'name'])->keyBy(fn ($l) => mb_strtolower(trim($l->name)));
+        $lessonsRaw = Lesson::query()->where('is_active', true)->get($lessonSelect);
+        $lessonsByName = $lessonsRaw->keyBy(fn ($l) => mb_strtolower(trim((string) $l->name)));
+        foreach ($lessonsRaw as $lessonRow) {
+            if ($hasLessonShortName) {
+                $short = mb_strtolower(trim((string) ($lessonRow->short_name ?? '')));
+                if ($short !== '' && ! $lessonsByName->has($short)) {
+                    $lessonsByName->put($short, $lessonRow);
+                }
+            }
+        }
 
         $created = 0;
         $updated = 0;
@@ -387,7 +398,7 @@ class TimetableController extends Controller
                 [
                     'teacher_id' => $teacherId,
                     'lesson_id' => $lesson->id,
-                    'lesson_name' => $lesson->name,
+                    'lesson_name' => ($hasLessonShortName ? ($lesson->short_name ?: $lesson->name) : $lesson->name),
                     'start_time' => $start,
                     'end_time' => $end,
                     'is_active' => true,

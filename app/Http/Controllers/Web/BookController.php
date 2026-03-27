@@ -14,16 +14,56 @@ use Throwable;
 
 class BookController extends Controller
 {
+    private function normalizeAnswerKey(?string $answerKey): ?string
+    {
+        $raw = trim((string) $answerKey);
+        if ($raw === '') {
+            return null;
+        }
+
+        // Accept old formats like "1:A,2:B" and compact new formats like "ABCDDABD".
+        preg_match_all('/[A-E]/i', $raw, $matches);
+        $letters = $matches[0] ?? [];
+        if (empty($letters)) {
+            return null;
+        }
+
+        return strtoupper(implode('', $letters));
+    }
+
     public function index()
     {
+        $lessons = Lesson::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->pluck('name');
+
+        $classes = SchoolClass::query()
+            ->orderBy('grade_level')
+            ->orderBy('section')
+            ->get(['id', 'name', 'grade_level']);
+
+        $selectedClass = null;
+        if (request()->filled('class_id')) {
+            $selectedClass = $classes->firstWhere('id', (int) request('class_id'));
+        }
+
         $books = Book::query()
             ->with('creator:id,name')
-            ->when(request('grade_level'), fn($q, $v) => $q->where('grade_level', $v))
+            ->when($selectedClass, fn($q) => $q->where('grade_level', $selectedClass->grade_level))
+            ->when(request('grade_level') && ! $selectedClass, fn($q, $v) => $q->where('grade_level', $v))
             ->when(request('lesson'), fn($q, $v) => $q->where('lesson', $v))
+            ->when(request('title'), fn($q, $v) => $q->where('title', 'like', '%'.$v.'%'))
+            ->when(request('publisher'), function ($q, $v) {
+                $q->where(function ($inner) use ($v) {
+                    $inner->where('title', 'like', '%'.$v.'%')
+                        ->orWhere('description', 'like', '%'.$v.'%');
+                });
+            })
             ->latest()
             ->paginate(10);
 
-        return view('books.index', compact('books'));
+        return view('books.index', compact('books', 'lessons', 'classes'));
     }
 
     public function show(Book $book)
@@ -116,7 +156,7 @@ class BookController extends Controller
             'unit_name' => $data['unit_name'],
             'test_name' => $data['test_name'],
             'question_count' => (int) $data['question_count'],
-            'answer_key' => $data['answer_key'] ?? null,
+            'answer_key' => $this->normalizeAnswerKey($data['answer_key'] ?? null),
             'sort_order' => (int) ($data['sort_order'] ?? 0),
         ]);
 
@@ -139,7 +179,7 @@ class BookController extends Controller
             'unit_name' => $data['unit_name'],
             'test_name' => $data['test_name'],
             'question_count' => (int) $data['question_count'],
-            'answer_key' => $data['answer_key'] ?? null,
+            'answer_key' => $this->normalizeAnswerKey($data['answer_key'] ?? null),
             'sort_order' => (int) ($data['sort_order'] ?? 0),
         ]);
 

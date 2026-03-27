@@ -14,10 +14,10 @@
         @endif
 
         <section class="rounded-2xl border border-slate-200 bg-white p-3">
-            <div class="flex flex-wrap gap-2">
-                <button type="button" @click="tab='ders-secimi'" :class="tab==='ders-secimi' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'" class="rounded-lg px-4 py-2 text-sm font-semibold">Ders Secimi</button>
-                <button type="button" @click="tab='programlar'" :class="tab==='programlar' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'" class="rounded-lg px-4 py-2 text-sm font-semibold">Ders Programlari</button>
-                <button type="button" @click="tab='toplu'" :class="tab==='toplu' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'" class="rounded-lg px-4 py-2 text-sm font-semibold">Toplu Kayit</button>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button type="button" @click="tab='ders-secimi'" :class="tab==='ders-secimi' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'" class="rounded-lg px-4 py-2 text-sm font-semibold w-full">Ders Secimi</button>
+                <button type="button" @click="tab='programlar'" :class="tab==='programlar' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'" class="rounded-lg px-4 py-2 text-sm font-semibold w-full">Ders Programlari</button>
+                <button type="button" @click="tab='toplu'" :class="tab==='toplu' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'" class="rounded-lg px-4 py-2 text-sm font-semibold w-full">Toplu Kayit</button>
             </div>
         </section>
 
@@ -26,9 +26,9 @@
             <form method="GET" action="{{ route('timetables.index') }}" class="mt-3 grid grid-cols-1 md:grid-cols-[1fr_220px_180px] gap-3 items-end">
                 <div>
                     <label class="text-sm text-slate-600">Gunler</label>
-                    <div class="mt-2 flex flex-wrap gap-2">
+                    <div class="mt-2 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
                         @foreach($dayOptions as $day)
-                            <label class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm">
+                            <label class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm min-w-0">
                                 <input type="checkbox" name="days[]" value="{{ $day['id'] }}" @checked($selectedDays->contains($day['id']))>
                                 <span>{{ $day['name'] }}</span>
                             </label>
@@ -89,19 +89,18 @@
             <p class="mt-2 text-xs text-slate-500">Sablon kolonlari: sinif, gun, ders_saati, ogretmen_e_posta, ders</p>
         </section>
 
-        <section x-show="tab==='ders-secimi'" x-cloak class="rounded-2xl border border-slate-200 bg-white p-4 overflow-x-auto">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <section x-show="tab==='ders-secimi'" x-cloak class="rounded-2xl border border-slate-200 bg-white p-4 overflow-hidden">
+            <div class="flex flex-wrap items-center gap-3 mb-3">
                 <h3 class="font-semibold text-slate-800 mb-1">Siniflara Gore Haftalik Ders Programi</h3>
                 <form method="GET" action="{{ route('timetables.index') }}" class="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="period_count" value="{{ $periodCount }}">
                     @foreach($selectedDays as $d)<input type="hidden" name="days[]" value="{{ $d }}">@endforeach
-                    <select name="grid_class_id" class="h-10 rounded-lg border-slate-300 text-sm w-full sm:w-auto sm:min-w-[220px]">
+                    <select name="grid_class_id" onchange="this.form.submit()" class="h-10 rounded-lg border-slate-300 text-sm w-full sm:w-auto sm:min-w-[220px]">
                         <option value="0">Sinif seciniz</option>
                         @foreach($classes as $class)
                             <option value="{{ $class->id }}" @selected($selectedGridClassId === $class->id)>{{ $class->name }}</option>
                         @endforeach
                     </select>
-                    <button class="h-10 rounded-lg bg-slate-900 text-white px-3 text-sm w-full sm:w-auto">Filtrele</button>
                 </form>
             </div>
             <p class="text-xs text-slate-500 mb-3">Slot kartini surukleyip bos hucreye birakarak tasiyabilirsiniz.</p>
@@ -114,7 +113,7 @@
                 @foreach($classesForGrid as $class)
                     <div class="rounded-xl border border-slate-200 p-3 mobile-table-wrap">
                         <h4 class="font-semibold text-slate-800 mb-2">{{ $class->name }}</h4>
-                        <table class="lms-table">
+                        <table class="lms-table table-fixed w-full">
                             <thead>
                                 <tr>
                                     <th>Ders Saati</th>
@@ -126,18 +125,17 @@
                             <tbody>
                                 @foreach($periods as $period)
                                     <tr>
-                                        <td class="font-semibold">{{ $period }}. Saat</td>
+                                        <td class="font-semibold whitespace-nowrap">{{ $period }}. Saat</td>
                                         @foreach($selectedDays as $day)
                                             @php $slot = $slotMap[$class->id][$day][$period] ?? null; $cellKey = $class->id.'-'.$day.'-'.$period; @endphp
-                                            <td class="align-top drop-target" data-class-id="{{ $class->id }}" data-day="{{ $day }}" data-period="{{ $period }}">
+                                            <td class="align-top drop-target break-words" data-class-id="{{ $class->id }}" data-day="{{ $day }}" data-period="{{ $period }}">
                                                 @if($slot)
                                                     <div
                                                         class="rounded-lg border border-slate-200 p-2 bg-slate-50 timetable-slot cursor-move"
                                                         draggable="true"
                                                         data-schedule-id="{{ $slot->id }}"
                                                     >
-                                                        <p class="text-sm font-semibold text-slate-800">{{ $slot->lesson?->name ?? $slot->lesson_name }}</p>
-                                                        <p class="text-xs text-slate-500">{{ $slot->teacher?->name ?? '-' }}</p>
+                                                        <p class="text-sm font-semibold text-slate-800">{{ $slot->lesson?->short_name ?? $slot->lesson?->name ?? $slot->lesson_name }}</p>
                                                         <form method="POST" action="{{ route('timetables.destroy', $slot) }}" class="mt-1">
                                                             @csrf @method('DELETE')
                                                             <input type="hidden" name="period_count" value="{{ $periodCount }}">
@@ -151,7 +149,7 @@
                                                 @endif
 
                                                 <div x-show="openCell === '{{ $cellKey }}'" x-cloak class="mt-2 rounded-lg border border-slate-200 p-2 bg-white">
-                                                    <form method="POST" action="{{ route('timetables.store') }}" class="space-y-2 slot-create-form">
+                                                    <form method="POST" action="{{ route('timetables.store') }}" class="space-y-2 slot-create-form min-w-0">
                                                         @csrf
                                                         <input type="hidden" name="class_id" value="{{ $class->id }}">
                                                         <input type="hidden" name="day_of_week" value="{{ $day }}">
@@ -160,16 +158,16 @@
                                                         <input type="hidden" name="grid_class_id" value="{{ $selectedGridClassId ?? 0 }}">
                                                         @foreach($selectedDays as $d)<input type="hidden" name="days[]" value="{{ $d }}">@endforeach
 
-                                                        <select name="teacher_id" class="w-full h-8 rounded-md border-slate-300 text-xs" required>
+                                                        <select name="teacher_id" class="w-full h-8 rounded-md border-slate-300 text-[11px]" required>
                                                             <option value="">Ogretmen sec</option>
                                                             @foreach($teachers as $teacher)
                                                                 <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
                                                             @endforeach
                                                         </select>
-                                                        <select name="lesson_id" class="w-full h-8 rounded-md border-slate-300 text-xs" required>
+                                                        <select name="lesson_id" class="w-full h-8 rounded-md border-slate-300 text-[11px]" required>
                                                             <option value="">Ders sec</option>
                                                             @foreach($lessons as $lesson)
-                                                                <option value="{{ $lesson->id }}">{{ $lesson->name }}</option>
+                                                                <option value="{{ $lesson->id }}">{{ ($lesson->short_name ? $lesson->short_name.' - ' : '') . $lesson->name }}</option>
                                                             @endforeach
                                                         </select>
                                                         <div class="flex justify-end gap-2">
@@ -243,8 +241,7 @@
                                                 @php $slot = $teacherProgramMap[$day][$col['period_no']] ?? null; @endphp
                                                 <td class="border border-slate-300 p-2 text-center align-top">
                                                     @if($slot)
-                                                        <div class="font-semibold">{{ $slot->lesson?->name ?? $slot->lesson_name }}</div>
-                                                        <div class="text-[11px] text-slate-500 mt-1">{{ $slot->class?->name }}</div>
+                                                        <div class="font-semibold">{{ $slot->lesson?->short_name ?? $slot->lesson?->name ?? $slot->lesson_name }}</div>
                                                     @endif
                                                 </td>
                                             @endif
@@ -284,8 +281,7 @@
                                                 @php $slot = $classProgramMap[$day][$col['period_no']] ?? null; @endphp
                                                 <td class="border border-slate-300 p-2 text-center align-top">
                                                     @if($slot)
-                                                        <div class="font-semibold">{{ $slot->lesson?->name ?? $slot->lesson_name }}</div>
-                                                        <div class="text-[11px] text-slate-500 mt-1">{{ $slot->teacher?->name }}</div>
+                                                        <div class="font-semibold">{{ $slot->lesson?->short_name ?? $slot->lesson?->name ?? $slot->lesson_name }}</div>
                                                     @endif
                                                 </td>
                                             @endif
@@ -429,7 +425,6 @@
                         cell.innerHTML = `
                             <div class="rounded-lg border border-slate-200 p-2 bg-slate-50 timetable-slot cursor-move" draggable="true" data-schedule-id="${data.slot.id}">
                                 <p class="text-sm font-semibold text-slate-800">${data.slot.lesson_name || '-'}</p>
-                                <p class="text-xs text-slate-500">${data.slot.teacher_name || '-'}</p>
                                 ${buildDeleteFormHtml(data.slot.id)}
                             </div>
                         `;

@@ -8,9 +8,11 @@ class WhatsappProviderFactory
 {
     public static function make(?string $provider = null): WhatsappProviderInterface
     {
-        return match ($provider ?? config('services.whatsapp.provider', 'twilio')) {
-            'meta' => app(MetaWhatsappProvider::class),
-            default => app(TwilioWhatsappProvider::class),
-        };
+        $resolvedProvider = $provider ?? config('services.whatsapp.provider', 'venom');
+        if ($resolvedProvider !== 'venom') {
+            throw new \InvalidArgumentException('Sadece Venom Bot sağlayıcısı kullanılabilir.');
+        }
+
+        return app(VenomWhatsappProvider::class);
     }
 }

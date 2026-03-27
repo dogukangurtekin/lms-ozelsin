@@ -33,9 +33,5 @@
 
         <button type="submit" class="w-full rounded-lg bg-slate-900 text-white py-2.5 font-medium hover:bg-slate-800">Giris Yap</button>
 
-        <p class="text-sm text-center text-slate-600">
-            Hesabin yok mu?
-            <a href="{{ route('register') }}" class="font-semibold text-slate-900">Kayit Ol</a>
-        </p>
     </form>
 </x-guest-layout>

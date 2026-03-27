@@ -48,6 +48,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('meetings/{meeting}/edit', [MeetingController::class, 'edit'])->name('meetings.edit')->middleware('role:admin,teacher')->middleware('module:meetings');
     Route::get('meetings/{meeting}', [MeetingController::class, 'show'])->name('meetings.show')->middleware('role:admin,teacher,parent,student')->middleware('module:meetings');
     Route::put('meetings/{meeting}', [MeetingController::class, 'update'])->name('meetings.update')->middleware('role:admin,teacher')->middleware('module:meetings');
+    Route::put('meetings/{meeting}/status', [MeetingController::class, 'updateStatus'])->name('meetings.status.update')->middleware('role:admin,teacher')->middleware('module:meetings');
+    Route::put('meetings/{meeting}/teacher-note', [MeetingController::class, 'updateTeacherNote'])->name('meetings.teacher-note.update')->middleware('role:admin,teacher')->middleware('module:meetings');
     Route::delete('meetings/{meeting}', [MeetingController::class, 'destroy'])->name('meetings.destroy')->middleware('role:admin,teacher')->middleware('module:meetings');
     Route::get('users', [UserManagementController::class, 'index'])->name('users.index')->middleware('role:admin')->middleware('module:users');
     Route::post('users', [UserManagementController::class, 'store'])->name('users.store')->middleware('role:admin')->middleware('module:users');
@@ -67,10 +69,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('users/{user}/assign-role', [UserManagementController::class, 'assignRole'])->name('users.assign-role')->middleware('role:admin')->middleware('module:users');
     Route::post('users/{user}/assign-class', [UserManagementController::class, 'assignClass'])->name('users.assign-class')->middleware('role:admin')->middleware('module:users');
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index')->middleware('role:admin,teacher')->middleware('module:reports');
+    Route::get('reports/quick/student-pdf', [ReportController::class, 'quickStudentPdf'])->name('reports.quick.student-pdf')->middleware('role:admin,teacher')->middleware('module:reports');
+    Route::get('reports/quick/attendance-pdf', [ReportController::class, 'quickAttendancePdf'])->name('reports.quick.attendance-pdf')->middleware('role:admin,teacher')->middleware('module:reports');
     Route::get('lessons', [LessonController::class, 'index'])->name('lessons.index')->middleware('role:admin')->middleware('module:lessons');
     Route::post('lessons', [LessonController::class, 'store'])->name('lessons.store')->middleware('role:admin')->middleware('module:lessons');
     Route::post('lessons/import', [LessonController::class, 'import'])->name('lessons.import')->middleware('role:admin')->middleware('module:lessons');
     Route::get('lessons/template', [LessonController::class, 'downloadTemplate'])->name('lessons.template')->middleware('role:admin')->middleware('module:lessons');
+    Route::put('lessons/{lesson}', [LessonController::class, 'update'])->name('lessons.update')->middleware('role:admin')->middleware('module:lessons');
     Route::post('lessons/{lesson}/assign-teacher', [LessonController::class, 'assignTeacher'])->name('lessons.assign-teacher')->middleware('role:admin')->middleware('module:lessons');
     Route::delete('lessons/{lesson}', [LessonController::class, 'destroy'])->name('lessons.destroy')->middleware('role:admin')->middleware('module:lessons');
     Route::get('attendance', [AttendanceController::class, 'index'])->name('attendance.index')->middleware('role:admin,teacher')->middleware('module:attendance');
@@ -85,6 +90,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('timetables/{schedule}', [TimetableController::class, 'destroy'])->name('timetables.destroy')->middleware('role:admin,teacher')->middleware('module:timetables');
     Route::get('whatsapp', [WhatsappController::class, 'index'])->name('whatsapp.index')->middleware('role:admin,teacher')->middleware('module:whatsapp');
     Route::post('whatsapp/send', [WhatsappController::class, 'send'])->name('whatsapp.send')->middleware('role:admin,teacher')->middleware('module:whatsapp');
+    Route::post('whatsapp/requeue-queued', [WhatsappController::class, 'requeueQueued'])->name('whatsapp.requeue-queued')->middleware('role:admin,teacher')->middleware('module:whatsapp');
+    Route::post('whatsapp/settings', [WhatsappController::class, 'updateSettings'])->name('whatsapp.settings.update')->middleware('role:admin')->middleware('module:whatsapp');
 
     Route::get('role-permissions', [\App\Http\Controllers\Web\RolePermissionController::class, 'index'])
         ->name('role-permissions.index')->middleware('role:admin')->middleware('module:role_permissions');

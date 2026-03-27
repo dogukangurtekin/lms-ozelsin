@@ -9,6 +9,7 @@ use App\Http\Requests\StoreAssignmentSubmissionRequest;
 use App\Http\Requests\UpdateAssignmentRequest;
 use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
+use App\Models\Book;
 use App\Models\Lesson;
 use App\Models\SchoolClass;
 use App\Models\User;
@@ -78,13 +79,40 @@ class AssignmentController extends Controller
             ? Lesson::where('is_active', true)->orderBy('name')->get(['id', 'name'])
             : $user->lessons()->where('is_active', true)->orderBy('name')->get(['lessons.id', 'lessons.name']);
 
-        return view('assignments.wizard', compact('classes', 'students', 'lessons'));
+        $books = Book::query()
+            ->with(['tests:id,book_id,unit_name,test_name'])
+            ->orderBy('title')
+            ->get(['id', 'title', 'lesson']);
+
+        $booksForJs = $books->map(function ($book) {
+            return [
+                'id' => $book->id,
+                'title' => $book->title,
+                'lesson' => $book->lesson,
+                'tests' => $book->tests->map(function ($t) {
+                    return [
+                        'id' => $t->id,
+                        'unit_name' => $t->unit_name,
+                        'test_name' => $t->test_name,
+                    ];
+                })->values()->all(),
+            ];
+        })->values()->all();
+
+        $lessonsForJs = $lessons->map(function ($l) {
+            return ['id' => $l->id, 'name' => $l->name];
+        })->values()->all();
+
+        return view('assignments.wizard', compact('classes', 'students', 'lessons', 'books', 'booksForJs', 'lessonsForJs'));
     }
 
     public function storeWizard(Request $request, AssignmentService $service)
     {
         $user = $request->user();
         abort_unless($user->hasRole(['admin', 'teacher']), 403);
+        if ($request->input('class_id') === 'all') {
+            $request->merge(['class_id' => null]);
+        }
 
         $data = $request->validate([
             'period' => 'required|string|max:50',
@@ -95,6 +123,8 @@ class AssignmentController extends Controller
             'student_ids' => 'nullable|array',
             'student_ids.*' => 'exists:users,id',
             'lesson_id' => 'required|exists:lessons,id',
+            'book_id' => 'nullable|exists:books,id',
+            'book_test_id' => 'nullable|exists:book_tests,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'start_at' => 'required|date',
@@ -104,11 +134,32 @@ class AssignmentController extends Controller
 
         $created = 0;
         DB::transaction(function () use ($data, $service, $user, &$created) {
+            $bookLabel = null;
+            if (!empty($data['book_id'])) {
+                $book = Book::query()->find((int) $data['book_id']);
+                if ($book) {
+                    $bookLabel = 'Kitap: '.$book->title;
+                }
+            }
+
+            if (!empty($data['book_test_id'])) {
+                $test = \App\Models\BookTest::query()->find((int) $data['book_test_id']);
+                if ($test) {
+                    $testText = trim(($test->unit_name ? $test->unit_name.' - ' : '').$test->test_name);
+                    $bookLabel = trim(($bookLabel ? $bookLabel.' | ' : '').'Test: '.$testText);
+                }
+            }
+
+            $descriptionWithBook = $data['description'] ?? null;
+            if ($bookLabel) {
+                $descriptionWithBook = trim(($descriptionWithBook ? $descriptionWithBook."\n\n" : '').$bookLabel);
+            }
+
             $basePayload = [
                 'teacher_id' => $user->id,
                 'lesson_id' => (int) $data['lesson_id'],
                 'title' => $data['title'],
-                'description' => $data['description'] ?? null,
+                'description' => $descriptionWithBook,
                 'start_at' => $data['start_at'],
                 'due_at' => $data['due_at'],
                 'period' => $data['period'],

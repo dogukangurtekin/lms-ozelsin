@@ -35,8 +35,12 @@
                         <input name="test_name" class="rounded-lg border-slate-300" placeholder="Test Adi" required>
                         <input name="question_count" type="number" min="0" class="rounded-lg border-slate-300" placeholder="Test Soru Sayisi" required>
                         <input name="sort_order" type="number" min="0" class="rounded-lg border-slate-300" placeholder="Sira (Opsiyonel)">
-                        <button class="rounded-lg bg-emerald-600 text-white px-4 py-2">Ekle</button>
-                        <textarea name="answer_key" rows="3" class="md:col-span-5 rounded-lg border-slate-300" placeholder="Cevap Anahtari (or: 1:A,2:C,3:D...)" required></textarea>
+                        <textarea name="answer_key" rows="3" class="md:col-span-5 rounded-lg border-slate-300" placeholder="Cevap Anahtari (orn: ABCDDABD)" required></textarea>
+                        <div class="md:col-span-5 flex justify-end">
+                            <button type="submit" class="inline-flex items-center justify-center rounded-lg px-5 h-10 text-sm font-semibold shadow-sm" style="background:#16a34a;color:#fff;border:1px solid #15803d;">
+                                Ekle
+                            </button>
+                        </div>
                     </form>
                 </section>
             @endif

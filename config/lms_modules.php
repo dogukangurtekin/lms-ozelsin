@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 return [
     'dashboard' => 'Dashboard',
@@ -13,3 +13,5 @@ return [
     'users' => 'Kullanici Yonetimi Modulu',
     'role_permissions' => 'Rol ve Modul Yetkileri',
 ];
+
+

@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="header"><h2 class="font-semibold text-xl">Kayıt Yönetimi</h2></x-slot>
 
     <div class="space-y-5" x-data="{ tab: '{{ old('tab', request('tab', 'ozet')) }}' }">
@@ -18,6 +18,7 @@
                 <button @click="tab='ozet'" :class="tab==='ozet' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'" class="px-4 py-2 rounded-xl text-sm font-semibold">Özet</button>
                 <button @click="tab='ogrenciler'" :class="tab==='ogrenciler' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'" class="px-4 py-2 rounded-xl text-sm font-semibold">Öğrenciler</button>
                 <button @click="tab='ogretmenler'" :class="tab==='ogretmenler' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'" class="px-4 py-2 rounded-xl text-sm font-semibold">Öğretmenler</button>
+                <button @click="tab='veliler'" :class="tab==='veliler' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'" class="px-4 py-2 rounded-xl text-sm font-semibold">Veliler</button>
                 <button @click="tab='siniflar'" :class="tab==='siniflar' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'" class="px-4 py-2 rounded-xl text-sm font-semibold">Sınıflar</button>
                 <button @click="tab='raporlar'" :class="tab==='raporlar' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'" class="px-4 py-2 rounded-xl text-sm font-semibold">Raporlar</button>
             </div>
@@ -78,6 +79,16 @@
                         <option value="">Sinif Sec</option>@foreach($classes as $class)<option value="{{ $class->id }}">{{ $class->name }}</option>@endforeach
                     </select>
                     <select name="is_active" class="rounded-lg border-slate-300"><option value="1">Aktif</option><option value="0">Pasif</option></select>
+                    <input name="parent_name" placeholder="Veli Ad Soyad" class="rounded-lg border-slate-300">
+                    <input name="parent_phone" placeholder="Veli Telefon" class="rounded-lg border-slate-300">
+                    <input name="parent_email" type="email" placeholder="Veli E-posta (Opsiyonel)" class="rounded-lg border-slate-300">
+                    <select name="parent_relation_type" class="rounded-lg border-slate-300">
+                        <option value="">Veli Yakınlık Türü</option>
+                        <option value="Anne">Anne</option>
+                        <option value="Baba">Baba</option>
+                        <option value="Vasi">Vasi</option>
+                        <option value="Diğer">Diğer</option>
+                    </select>
                     <button class="rounded-lg px-4 py-2 font-semibold" style="background:#2563eb;color:#fff;border:1px solid #1d4ed8;">Kaydet</button>
                 </form>
             </div>
@@ -96,10 +107,10 @@
 
             <div class="rounded-2xl border border-slate-200 bg-white p-4 overflow-visible mobile-table-wrap">
                 <h3 class="font-semibold text-slate-800 mb-3">Ogrenci Listesi</h3>
-                <table class="lms-table">
-                    <thead><tr><th>Ad Soyad</th><th>Sınıf</th><th>Numara</th><th>E-posta</th><th>Telefon</th><th>Durum</th><th class="text-right">Ayarlar</th></tr></thead>
-                    <tbody>
+                <table class="lms-table stack-list-mobile">
+                    <thead><tr><th>Ad Soyad</th><th>Sınıf</th><th>Numara</th><th>E-posta</th><th>Telefon</th><th>Durum</th><th class="text-right">İşlem</th></tr></thead>
                     @forelse($studentTable as $row)
+                        <tbody x-data="{ showOpen: false, editOpen: false }">
                         <tr>
                             <td class="font-semibold">{{ $row->name }}</td>
                             <td>{{ $row->class_name ?? '-' }}</td>
@@ -107,22 +118,84 @@
                             <td>{{ $row->email }}</td>
                             <td>{{ $row->phone ?? '-' }}</td>
                             <td>@if($row->is_active)<span class="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs">Aktif</span>@else<span class="px-2 py-1 rounded-full bg-rose-100 text-rose-700 text-xs">Pasif</span>@endif</td>
-                            <td class="text-right relative">
-                                <div class="relative inline-block text-left" x-data="{ open: false, x: 0, y: 0 }">
-                                    <button type="button" @click="const r=$el.getBoundingClientRect(); x=r.right-150; y=r.bottom+6; open=!open" class="rounded-lg border border-slate-300 px-3 py-1 text-xs bg-white">Ayarlar</button>
-                                    <div x-show="open" @click.outside="open=false" style="display:none;" class="fixed w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-[99999]" :style="`left:${x}px;top:${y}px`">
-                                        <button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50">Göster</button>
-                                        <button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50">Düzenle</button>
-                                        <form method="POST" action="{{ route('users.students.destroy', $row->id) }}" onsubmit="return confirm('Bu öğrenci silinsin mi?')">
-                                            @csrf @method('DELETE')
-                                            <button class="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50">Sil</button>
-                                        </form>
-                                    </div>
+                            <td class="text-right">
+                                <div class="inline-flex items-center gap-2">
+                                    <button type="button" @click="editOpen=!editOpen; showOpen=false" class="lms-action-btn edit">Düzenle</button>
+                                    <form method="POST" action="{{ route('users.students.destroy', $row->id) }}" onsubmit="return confirm('Bu öğrenci silinsin mi?')">
+                                        @csrf @method('DELETE')
+                                        <button class="lms-action-btn delete">Sil</button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
+                        <tr x-show="showOpen" style="display:none;" class="bg-slate-50">
+                            <td colspan="7" class="p-3">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm">
+                                    <div><span class="text-slate-500">Ad Soyad:</span> <span class="font-medium">{{ $row->name }}</span></div>
+                                    <div><span class="text-slate-500">E-posta:</span> <span class="font-medium">{{ $row->email }}</span></div>
+                                    <div><span class="text-slate-500">Telefon:</span> <span class="font-medium">{{ $row->phone ?? '-' }}</span></div>
+                                    <div><span class="text-slate-500">Doğum Tarihi:</span> <span class="font-medium">{{ $row->birth_date ?? '-' }}</span></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr x-show="editOpen" style="display:none;" class="bg-slate-50">
+                            <td colspan="7" class="p-3">
+                                <form method="POST" action="{{ route('users.students.update', $row->id) }}" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                    @csrf @method('PUT')
+                                    <input name="name" value="{{ $row->name }}" class="rounded-lg border-slate-300 text-sm" required>
+                                    <input name="email" type="email" value="{{ $row->email }}" class="rounded-lg border-slate-300 text-sm" required>
+                                    <input name="phone" value="{{ $row->phone }}" class="rounded-lg border-slate-300 text-sm">
+                                    <input name="student_number" value="{{ $row->student_number }}" class="rounded-lg border-slate-300 text-sm" required>
+                                    <input name="birth_date" type="date" value="{{ $row->birth_date }}" class="rounded-lg border-slate-300 text-sm">
+                                    <select name="class_id" class="rounded-lg border-slate-300 text-sm">
+                                        <option value="">Sınıf Seç</option>
+                                        @foreach($classes as $class)
+                                            <option value="{{ $class->id }}" @selected($row->class_id == $class->id)>{{ $class->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <select name="is_active" class="rounded-lg border-slate-300 text-sm">
+                                        <option value="1" @selected((int)$row->is_active===1)>Aktif</option>
+                                        <option value="0" @selected((int)$row->is_active===0)>Pasif</option>
+                                    </select>
+                                    <div class="flex items-center gap-2">
+                                        <button class="rounded-lg bg-blue-600 text-white px-3 py-2 text-sm">Güncelle</button>
+                                        <button type="button" @click="editOpen=false" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">Vazgeç</button>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
                     @empty
-                        <tr><td colspan="7">Kayıt yok.</td></tr>
+                        <tbody><tr><td colspan="7">Kayıt yok.</td></tr></tbody>
+                    @endforelse
+                </table>
+            </div>
+        </section>
+
+        <section x-show="tab==='veliler'" style="display:none;" class="space-y-4">
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 mobile-table-wrap">
+                <h3 class="font-semibold text-slate-800 mb-3">Veli Listesi</h3>
+                <table class="lms-table stack-list-mobile">
+                    <thead>
+                        <tr>
+                            <th>Veli Ad Soyad</th>
+                            <th>Telefon</th>
+                            <th>E-posta</th>
+                            <th>Yakınlık</th>
+                            <th>Öğrenci Ad Soyad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @forelse($parentTable as $parent)
+                        <tr>
+                            <td class="font-semibold">{{ $parent->name }}</td>
+                            <td>{{ $parent->phone ?? '-' }}</td>
+                            <td>{{ $parent->email ?? '-' }}</td>
+                            <td>{{ $parent->relation_type ?? 'Veli' }}</td>
+                            <td>{{ $parent->student_names ?: '-' }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="5">Kayıt yok.</td></tr>
                     @endforelse
                     </tbody>
                 </table>
@@ -146,7 +219,7 @@
                             <label class="text-sm text-slate-600"><input type="checkbox" name="class_ids[]" value="{{ $class->id }}" class="rounded border-slate-300"> {{ $class->name }}</label>
                         @endforeach
                     </div>
-                    <button class="rounded-lg px-4 py-2 md:col-span-3 font-semibold" style="background:#16a34a;color:#fff;border:1px solid #15803d;">Kaydet</button>
+                    <button class="rounded-lg px-4 h-10 md:col-span-1 self-start justify-self-start font-semibold text-sm" style="background:#16a34a;color:#fff;border:1px solid #15803d;">Kaydet</button>
                 </form>
             </div>
 
@@ -164,10 +237,10 @@
 
             <div class="rounded-2xl border border-slate-200 bg-white p-4 overflow-visible mobile-table-wrap">
                 <h3 class="font-semibold text-slate-800 mb-3">Ogretmen Listesi</h3>
-                <table class="lms-table">
-                    <thead><tr><th>Ad Soyad</th><th>Branş</th><th>Sorumlu Sınıflar</th><th>E-posta</th><th>Telefon</th><th>Durum</th><th class="text-right">Ayarlar</th></tr></thead>
-                    <tbody>
+                <table class="lms-table stack-list-mobile">
+                    <thead><tr><th>Ad Soyad</th><th>Branş</th><th>Sorumlu Sınıflar</th><th>E-posta</th><th>Telefon</th><th>Durum</th><th class="text-right">İşlem</th></tr></thead>
                     @forelse($teacherTable as $row)
+                        <tbody x-data="{ showOpen: false, editOpen: false }">
                         <tr>
                             <td class="font-semibold">{{ $row->name }}</td>
                             <td>{{ $row->branch ?? '-' }}</td>
@@ -175,28 +248,64 @@
                             <td>{{ $row->email }}</td>
                             <td>{{ $row->phone ?? '-' }}</td>
                             <td>@if($row->is_active)<span class="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs">Aktif</span>@else<span class="px-2 py-1 rounded-full bg-rose-100 text-rose-700 text-xs">Pasif</span>@endif</td>
-                            <td class="text-right relative">
-                                <div class="relative inline-block text-left" x-data="{ open: false, x: 0, y: 0 }">
-                                    <button type="button" @click="const r=$el.getBoundingClientRect(); x=r.right-150; y=r.bottom+6; open=!open" class="rounded-lg border border-slate-300 px-3 py-1 text-xs bg-white">Ayarlar</button>
-                                    <div x-show="open" @click.outside="open=false" style="display:none;" class="fixed w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-[99999]" :style="`left:${x}px;top:${y}px`">
-                                        <button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50">Göster</button>
-                                        <button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50">Düzenle</button>
-                                        @if($row->teacher_profile_id)
-                                            <form method="POST" action="{{ route('users.teachers.destroy', $row->teacher_profile_id) }}" onsubmit="return confirm('Bu öğretmen silinsin mi?')">
-                                                @csrf @method('DELETE')
-                                                <button class="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50">Sil</button>
-                                            </form>
-                                        @else
-                                            <button type="button" class="w-full text-left px-3 py-2 text-sm text-slate-400 cursor-not-allowed">Sil (profil yok)</button>
-                                        @endif
-                                    </div>
+                            <td class="text-right">
+                                <div class="inline-flex items-center gap-2">
+                                    <button type="button" @click="editOpen=!editOpen; showOpen=false" class="lms-action-btn edit">Düzenle</button>
+                                    @if($row->teacher_profile_id)
+                                        <form method="POST" action="{{ route('users.teachers.destroy', $row->teacher_profile_id) }}" onsubmit="return confirm('Bu öğretmen silinsin mi?')">
+                                            @csrf @method('DELETE')
+                                            <button class="lms-action-btn delete">Sil</button>
+                                        </form>
+                                    @else
+                                        <button type="button" class="lms-action-btn delete opacity-50 cursor-not-allowed" disabled>Sil</button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
+                        <tr x-show="showOpen" style="display:none;" class="bg-slate-50">
+                            <td colspan="7" class="p-3">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm">
+                                    <div><span class="text-slate-500">Ad Soyad:</span> <span class="font-medium">{{ $row->name }}</span></div>
+                                    <div><span class="text-slate-500">Branş:</span> <span class="font-medium">{{ $row->branch ?? '-' }}</span></div>
+                                    <div><span class="text-slate-500">E-posta:</span> <span class="font-medium">{{ $row->email }}</span></div>
+                                    <div><span class="text-slate-500">Telefon:</span> <span class="font-medium">{{ $row->phone ?? '-' }}</span></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr x-show="editOpen" style="display:none;" class="bg-slate-50">
+                            <td colspan="7" class="p-3">
+                                @if($row->teacher_profile_id)
+                                    <form method="POST" action="{{ route('users.teachers.update', $row->teacher_profile_id) }}" class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                                        @csrf @method('PUT')
+                                        <input name="name" value="{{ $row->name }}" class="rounded-lg border-slate-300 text-sm" required>
+                                        <input name="email" type="email" value="{{ $row->email }}" class="rounded-lg border-slate-300 text-sm" required>
+                                        <input name="phone" value="{{ $row->phone }}" class="rounded-lg border-slate-300 text-sm">
+                                        <input name="branch" value="{{ $row->branch }}" class="rounded-lg border-slate-300 text-sm" placeholder="Branş">
+                                        <select name="is_active" class="rounded-lg border-slate-300 text-sm h-10">
+                                            <option value="1" @selected((int)$row->is_active===1)>Aktif</option>
+                                            <option value="0" @selected((int)$row->is_active===0)>Pasif</option>
+                                        </select>
+                                        <div class="md:col-span-3 rounded-lg border border-slate-200 p-3 grid grid-cols-2 md:grid-cols-4 gap-2 max-h-40 overflow-auto">
+                                            @php $selectedClassNames = collect(explode(',', $row->class_names))->map(fn($x)=>trim($x))->filter()->values(); @endphp
+                                            @foreach($classes as $class)
+                                                <label class="text-sm text-slate-600">
+                                                    <input type="checkbox" name="class_ids[]" value="{{ $class->id }}" class="rounded border-slate-300" @checked($selectedClassNames->contains($class->name))>
+                                                    {{ $class->name }}
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                        <div class="md:col-span-2 flex items-end gap-2">
+                                            <button class="rounded-lg bg-blue-600 text-white px-3 h-10 text-sm">Güncelle</button>
+                                            <button type="button" @click="editOpen=false" class="rounded-lg border border-slate-300 bg-white px-3 h-10 text-sm">Vazgeç</button>
+                                        </div>
+                                    </form>
+                                @endif
+                            </td>
+                        </tr>
+                        </tbody>
                     @empty
-                        <tr><td colspan="7">Kayıt yok.</td></tr>
+                        <tbody><tr><td colspan="7">Kayıt yok.</td></tr></tbody>
                     @endforelse
-                    </tbody>
                 </table>
             </div>
         </section>
@@ -233,9 +342,8 @@
 
             <div class="rounded-2xl border border-slate-200 bg-white p-4 overflow-visible mobile-table-wrap">
                 <h3 class="font-semibold text-slate-800 mb-3">Sinif Listesi</h3>
-                <table class="lms-table">
-                    <thead><tr><th>Sınıf</th><th>Seviye</th><th>Şube</th><th>Şube Öğretmeni</th><th>Açıklama</th><th class="text-right">Ayarlar</th></tr></thead>
-                    <tbody>
+                <table class="lms-table stack-list-mobile">
+                    <thead><tr><th>Sınıf</th><th>Seviye</th><th>Şube</th><th>Şube Öğretmeni</th><th>Açıklama</th><th class="text-right">İşlem</th></tr></thead>
                     @forelse($classes as $class)
                         <tbody x-data="{ editOpen: false }">
                         <tr>
@@ -244,16 +352,13 @@
                             <td>{{ $class->section ?? '-' }}</td>
                             <td>{{ $class->homeroomTeacher?->name ?? '-' }}</td>
                             <td>{{ $class->description ?? '-' }}</td>
-                            <td class="text-right relative">
-                                <div class="relative inline-block text-left" x-data="{ open: false, x: 0, y: 0 }">
-                                    <button type="button" @click="const r=$el.getBoundingClientRect(); x=r.right-150; y=r.bottom+6; open=!open" class="rounded-lg border border-slate-300 px-3 py-1 text-xs bg-white">Ayarlar</button>
-                                    <div x-show="open" @click.outside="open=false" style="display:none;" class="fixed w-36 rounded-lg border border-slate-200 bg-white shadow-lg z-[99999]" :style="`left:${x}px;top:${y}px`">
-                                        <button type="button" @click="editOpen=true; open=false" class="w-full text-left px-3 py-2 text-sm hover:bg-slate-50">Düzenle</button>
-                                        <form method="POST" action="{{ route('users.classes.destroy', $class->id) }}" onsubmit="return confirm('Bu sınıf silinsin mi?')">
-                                            @csrf @method('DELETE')
-                                            <button class="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50">Sil</button>
-                                        </form>
-                                    </div>
+                            <td class="text-right">
+                                <div class="inline-flex items-center gap-2">
+                                    <button type="button" @click="editOpen=true" class="lms-action-btn edit">Düzenle</button>
+                                    <form method="POST" action="{{ route('users.classes.destroy', $class->id) }}" onsubmit="return confirm('Bu sınıf silinsin mi?')">
+                                        @csrf @method('DELETE')
+                                        <button class="lms-action-btn delete">Sil</button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
@@ -278,9 +383,8 @@
                         </tr>
                         </tbody>
                     @empty
-                        <tr><td colspan="6">Sınıf kaydı yok.</td></tr>
+                        <tbody><tr><td colspan="6">Sınıf kaydı yok.</td></tr></tbody>
                     @endforelse
-                    </tbody>
                 </table>
             </div>
         </section>

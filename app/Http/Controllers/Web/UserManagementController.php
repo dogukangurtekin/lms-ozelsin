@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Role;
+use App\Models\ParentProfile;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\Teacher;
@@ -138,6 +139,23 @@ class UserManagementController extends Controller
                 return $teacher;
             });
 
+        $parentTable = ParentProfile::query()
+            ->select('parents.id', 'parents.relation_type', 'users.name', 'users.email', 'users.phone')
+            ->join('users', 'users.id', '=', 'parents.user_id')
+            ->orderBy('users.name')
+            ->get()
+            ->map(function ($parent) {
+                $parent->student_names = DB::table('parent_student')
+                    ->join('students', 'students.id', '=', 'parent_student.student_id')
+                    ->join('users as su', 'su.id', '=', 'students.user_id')
+                    ->where('parent_student.parent_id', $parent->id)
+                    ->orderBy('su.name')
+                    ->pluck('su.name')
+                    ->implode(', ');
+
+                return $parent;
+            });
+
         return view('users.index', compact(
             'users',
             'roles',
@@ -150,7 +168,8 @@ class UserManagementController extends Controller
             'classCapacities',
             'gradeDistribution',
             'studentTable',
-            'teacherTable'
+            'teacherTable',
+            'parentTable'
         ));
     }
 
@@ -188,6 +207,10 @@ class UserManagementController extends Controller
             'birth_date' => 'nullable|date',
             'class_id' => 'nullable|exists:classes,id',
             'is_active' => 'nullable|boolean',
+            'parent_name' => 'nullable|string|max:255',
+            'parent_phone' => 'nullable|string|max:30',
+            'parent_email' => 'nullable|email|max:255',
+            'parent_relation_type' => 'nullable|string|max:50',
         ]);
 
         $studentRoleId = $this->resolveRoleId('student', 'Öğrenci');
@@ -211,6 +234,54 @@ class UserManagementController extends Controller
 
         if (! empty($data['class_id'])) {
             $user->classes()->syncWithoutDetaching([$data['class_id']]);
+        }
+
+        if (! empty($data['parent_name']) || ! empty($data['parent_phone']) || ! empty($data['parent_email'])) {
+            $parentRoleId = $this->resolveRoleId('parent', 'Veli');
+
+            $parentUser = null;
+            if (! empty($data['parent_email'])) {
+                $parentUser = User::where('email', $data['parent_email'])->first();
+            }
+            if (! $parentUser && ! empty($data['parent_phone'])) {
+                $parentUser = User::where('phone', $data['parent_phone'])->first();
+            }
+
+            if (! $parentUser) {
+                $generatedEmail = ! empty($data['parent_email'])
+                    ? $data['parent_email']
+                    : ('veli+'.now()->format('YmdHis').rand(100, 999).'@example.local');
+                $parentUser = User::create([
+                    'name' => $data['parent_name'] ?: 'Veli',
+                    'email' => $generatedEmail,
+                    'phone' => $data['parent_phone'] ?? null,
+                    'password' => Hash::make('12345678'),
+                    'is_active' => true,
+                ]);
+            }
+
+            $parentUser->roles()->syncWithoutDetaching([$parentRoleId]);
+            $parentUser->update([
+                'name' => $data['parent_name'] ?: $parentUser->name,
+                'phone' => $data['parent_phone'] ?: $parentUser->phone,
+                'email' => (! empty($data['parent_email']) && str_ends_with((string) $parentUser->email, '@example.local'))
+                    ? $data['parent_email']
+                    : $parentUser->email,
+            ]);
+
+            $parentProfile = ParentProfile::firstOrCreate(
+                ['user_id' => $parentUser->id],
+                ['relation_type' => $data['parent_relation_type'] ?? 'Veli']
+            );
+
+            if (! empty($data['parent_relation_type']) && $parentProfile->relation_type !== $data['parent_relation_type']) {
+                $parentProfile->update(['relation_type' => $data['parent_relation_type']]);
+            }
+
+            DB::table('parent_student')->updateOrInsert(
+                ['parent_id' => $parentProfile->id, 'student_id' => $student->id],
+                ['created_at' => now(), 'updated_at' => now()]
+            );
         }
 
         return redirect()->route('users.index', ['tab' => 'ogrenciler'])
@@ -683,6 +754,64 @@ class UserManagementController extends Controller
         $data = $request->validate(['class_id' => 'required|exists:classes,id']);
         $user->classes()->syncWithoutDetaching([$data['class_id']]);
         return back()->with('status', 'Sinif atamasi yapildi.');
+    }
+
+    public function updateStudent(Request $request, Student $student)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($student->user_id)],
+            'phone' => 'nullable|string|max:30',
+            'student_number' => ['required', 'string', 'max:50', Rule::unique('students', 'student_number')->ignore($student->id)],
+            'birth_date' => 'nullable|date',
+            'class_id' => 'nullable|exists:classes,id',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $user = User::findOrFail($student->user_id);
+        $user->update([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'] ?? null,
+            'is_active' => (bool) ($data['is_active'] ?? true),
+        ]);
+
+        $student->update([
+            'student_number' => $data['student_number'],
+            'birth_date' => $data['birth_date'] ?? null,
+            'class_id' => $data['class_id'] ?? null,
+        ]);
+
+        return redirect()->route('users.index', ['tab' => 'ogrenciler'])->with('status', 'Öğrenci kaydı güncellendi.');
+    }
+
+    public function updateTeacher(Request $request, Teacher $teacher)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($teacher->user_id)],
+            'phone' => 'nullable|string|max:30',
+            'branch' => 'nullable|string|max:255',
+            'class_ids' => 'nullable|array',
+            'class_ids.*' => 'exists:classes,id',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $user = User::findOrFail($teacher->user_id);
+        $user->update([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'phone' => $data['phone'] ?? null,
+            'is_active' => (bool) ($data['is_active'] ?? true),
+        ]);
+
+        $teacher->update([
+            'branch' => $data['branch'] ?? null,
+        ]);
+
+        $user->classes()->sync($data['class_ids'] ?? []);
+
+        return redirect()->route('users.index', ['tab' => 'ogretmenler'])->with('status', 'Öğretmen kaydı güncellendi.');
     }
 
     public function destroyStudent(Student $student)

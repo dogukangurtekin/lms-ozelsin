@@ -94,4 +94,45 @@ class MeetingController extends Controller
         $meeting->delete();
         return back()->with('status', 'Gorusme silindi.');
     }
+
+    public function updateStatus(\Illuminate\Http\Request $request, Meeting $meeting)
+    {
+        $user = $request->user();
+
+        if ($user->hasRole('teacher') && $meeting->teacher_id !== $user->id) {
+            abort(403);
+        }
+
+        abort_unless($user->hasRole(['admin', 'teacher']), 403);
+
+        $data = $request->validate([
+            'status' => ['required', 'in:completed,cancelled'],
+        ]);
+
+        $meeting->update([
+            'status' => $data['status'],
+        ]);
+
+        return back()->with('status', 'Gorusme durumu guncellendi.');
+    }
+
+    public function updateTeacherNote(\Illuminate\Http\Request $request, Meeting $meeting)
+    {
+        $user = $request->user();
+        if ($user->hasRole('teacher') && $meeting->teacher_id !== $user->id) {
+            abort(403);
+        }
+
+        $data = $request->validate([
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $meeting->update([
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        return redirect()
+            ->route('meetings.show', $meeting)
+            ->with('status', 'Öğretmen notu güncellendi.');
+    }
 }

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Lesson;
 use App\Models\User;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -24,19 +26,31 @@ class LessonController extends Controller
 
     public function store(Request $request)
     {
+        $hasShortName = Schema::hasColumn('lessons', 'short_name');
         $data = $request->validate([
             'name' => 'required|string|max:120|unique:lessons,name',
+            'short_name' => 'nullable|string|max:30',
             'code' => 'nullable|string|max:40|unique:lessons,code',
             'description' => 'nullable|string|max:1000',
             'is_active' => 'nullable|boolean',
         ]);
 
-        Lesson::create([
-            'name' => $data['name'],
-            'code' => $data['code'] ?? null,
-            'description' => $data['description'] ?? null,
+        $name = trim((string) $data['name']);
+        $shortName = isset($data['short_name']) ? trim((string) $data['short_name']) : '';
+        $code = isset($data['code']) ? trim((string) $data['code']) : '';
+        $description = isset($data['description']) ? trim((string) $data['description']) : '';
+
+        $payload = [
+            'name' => $name,
+            'code' => $code !== '' ? $code : null,
+            'description' => $description !== '' ? $description : null,
             'is_active' => (bool) ($data['is_active'] ?? true),
-        ]);
+        ];
+        if ($hasShortName) {
+            $payload['short_name'] = $shortName !== '' ? $shortName : null;
+        }
+
+        Lesson::create($payload);
 
         return back()->with('status', 'Ders eklendi.');
     }
@@ -51,6 +65,37 @@ class LessonController extends Controller
         return back()->with('status', 'Ogretmen-ders eslestirmesi kaydedildi.');
     }
 
+    public function update(Request $request, Lesson $lesson)
+    {
+        $hasShortName = Schema::hasColumn('lessons', 'short_name');
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:120', Rule::unique('lessons', 'name')->ignore($lesson->id)],
+            'short_name' => 'nullable|string|max:30',
+            'code' => ['nullable', 'string', 'max:40', Rule::unique('lessons', 'code')->ignore($lesson->id)],
+            'description' => 'nullable|string|max:1000',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $name = trim((string) $data['name']);
+        $shortName = isset($data['short_name']) ? trim((string) $data['short_name']) : '';
+        $code = isset($data['code']) ? trim((string) $data['code']) : '';
+        $description = isset($data['description']) ? trim((string) $data['description']) : '';
+
+        $payload = [
+            'name' => $name,
+            'code' => $code !== '' ? $code : null,
+            'description' => $description !== '' ? $description : null,
+            'is_active' => (bool) ($data['is_active'] ?? true),
+        ];
+        if ($hasShortName) {
+            $payload['short_name'] = $shortName !== '' ? $shortName : null;
+        }
+
+        $lesson->update($payload);
+
+        return back()->with('status', 'Ders guncellendi.');
+    }
+
     public function destroy(Lesson $lesson)
     {
         $lesson->delete();
@@ -59,6 +104,7 @@ class LessonController extends Controller
 
     public function import(Request $request)
     {
+        $hasShortName = Schema::hasColumn('lessons', 'short_name');
         $rows = $this->extractRowsFromRequest($request);
         if (empty($rows)) {
             return $this->failure($request, 'Dosya okunamadı veya satır bulunamadı.');
@@ -78,12 +124,17 @@ class LessonController extends Controller
                 continue;
             }
 
-            Lesson::create([
+            $payload = [
                 'name' => $name,
                 'code' => $code !== '' ? $code : null,
                 'description' => $row['description'] ?? null,
                 'is_active' => (bool) (($row['is_active'] ?? '1') === '1' || ($row['is_active'] ?? true) === true),
-            ]);
+            ];
+            if ($hasShortName) {
+                $payload['short_name'] = ! empty($row['short_name']) ? trim((string) $row['short_name']) : null;
+            }
+
+            Lesson::create($payload);
             $created++;
         }
 
@@ -96,8 +147,8 @@ class LessonController extends Controller
     public function downloadTemplate(): StreamedResponse
     {
         $rows = [
-            ['ders_adi', 'ders_kodu', 'aciklama', 'aktif_mi'],
-            ['Matematik', 'MAT-01', 'Temel Matematik Dersi', '1'],
+            ['ders_adi', 'kisa_ders_adi', 'ders_kodu', 'aciklama', 'aktif_mi'],
+            ['Matematik', 'MAT', 'MAT-01', 'Temel Matematik Dersi', '1'],
         ];
 
         return response()->streamDownload(function () use ($rows) {
@@ -216,6 +267,9 @@ class LessonController extends Controller
             'ad' => 'name',
             'name' => 'name',
             'ders_kodu' => 'code',
+            'kisa_ders_adi' => 'short_name',
+            'kisa_ad' => 'short_name',
+            'short_name' => 'short_name',
             'kod' => 'code',
             'code' => 'code',
             'aciklama' => 'description',

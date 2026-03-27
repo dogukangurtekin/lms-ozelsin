@@ -2,7 +2,7 @@
     <x-slot name="header"><h2 class="font-semibold text-xl">Rol ve Modul Yetkileri</h2></x-slot>
 
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
+        <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 space-y-4 min-w-0">
             @if(session('status'))
                 <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-emerald-700 text-sm">{{ session('status') }}</div>
             @endif
@@ -12,9 +12,9 @@
                 </div>
             @endif
 
-            <section class="rounded-2xl border border-slate-200 bg-white p-4">
+            <section class="rounded-2xl border border-slate-200 bg-white p-4 w-full min-w-0 max-w-full overflow-x-hidden">
                 <h3 class="font-semibold text-slate-800 mb-3">Modul Kontrolu</h3>
-                <form method="GET" action="{{ route('role-permissions.index') }}" class="flex items-end gap-3 mb-3">
+                <form method="GET" action="{{ route('role-permissions.index') }}" class="grid grid-cols-1 sm:grid-cols-[minmax(0,260px)] gap-3 mb-3">
                     <div>
                         <label class="block text-sm text-slate-600 mb-1">Rol</label>
                         <select name="role_id" class="rounded-lg border-slate-300 w-full sm:w-auto sm:min-w-[240px]" onchange="this.form.submit()">
@@ -25,22 +25,22 @@
                     </div>
                 </form>
 
-                <form method="POST" action="{{ route('role-permissions.modules.update') }}" class="space-y-3">
+                <form method="POST" action="{{ route('role-permissions.modules.update') }}" class="space-y-3 w-full min-w-0">
                     @csrf
                     <input type="hidden" name="role_id" value="{{ $selectedRoleId }}">
-                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2 w-full min-w-0">
                         @foreach($modules as $key => $label)
-                            <label class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                            <label class="flex w-full max-w-full items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm min-w-0 overflow-hidden">
                                 <input type="checkbox" name="modules[{{ $key }}]" value="1" @checked(($rolePermissions[$key] ?? true) === true)>
-                                <span>{{ $label }}</span>
+                                <span class="min-w-0 break-words leading-tight">{{ $label }}</span>
                             </label>
                         @endforeach
                     </div>
-                    <button class="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-semibold">Modul Yetkilerini Kaydet</button>
+                    <button class="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm font-semibold w-full sm:w-auto">Modul Yetkilerini Kaydet</button>
                 </form>
             </section>
 
-            <section class="rounded-2xl border border-slate-200 bg-white p-4">
+            <section class="rounded-2xl border border-slate-200 bg-white p-4 w-full min-w-0 max-w-full">
                 <h3 class="font-semibold text-slate-800 mb-3">Kullanici Rol Atama</h3>
                 <form method="GET" action="{{ route('role-permissions.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end mb-4">
                     <input type="hidden" name="role_id" value="{{ $selectedRoleId }}">
@@ -59,8 +59,8 @@
                     <button class="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold">Filtrele</button>
                 </form>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm">
+                <div class="mobile-table-wrap w-full min-w-0">
+                    <table class="w-full text-sm stack-list-mobile">
                         <thead>
                             <tr class="border-b text-left">
                                 <th class="p-2">Ad</th>
@@ -78,7 +78,7 @@
                                     <td class="p-2">{{ $user->phone ?? '-' }}</td>
                                     <td class="p-2">{{ $user->roles->first()?->label ?? '-' }}</td>
                                     <td class="p-2">
-                                        <form method="POST" action="{{ route('role-permissions.assign-role', $user) }}" class="flex gap-2">
+                                        <form method="POST" action="{{ route('role-permissions.assign-role', $user) }}" class="flex flex-col sm:flex-row gap-2">
                                             @csrf
                                             <select name="role_id" class="rounded border-slate-300 text-sm">
                                                 @foreach($roles as $role)
@@ -100,3 +100,4 @@
         </div>
     </div>
 </x-app-layout>
+

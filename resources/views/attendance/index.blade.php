@@ -36,11 +36,18 @@
             <h3 class="font-semibold text-slate-800">Ogretmen Ders Programi</h3>
             <div class="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 @forelse($schedules as $schedule)
+                    @php
+                        $scheduleSession = $sessionByScheduleId[$schedule->id] ?? null;
+                        $isTaken = $scheduleSession && $scheduleSession->taken_at;
+                    @endphp
                     <a href="{{ route('attendance.index', ['date' => $date, 'teacher_id' => request('teacher_id'), 'schedule_id' => $schedule->id]) }}"
                        class="rounded-xl border p-3 {{ $selectedSchedule && $selectedSchedule->id === $schedule->id ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white' }}">
                         <p class="font-semibold text-slate-800">{{ $schedule->lesson?->name ?? $schedule->lesson_name }}</p>
                         <p class="text-sm text-slate-500">{{ $schedule->class->name }} - {{ $schedule->teacher->name }}</p>
                         <p class="text-xs text-slate-400 mt-1">{{ substr($schedule->start_time,0,5) }}{{ $schedule->end_time ? ' - '.substr($schedule->end_time,0,5) : '' }}</p>
+                        <p class="mt-2 text-xs font-medium {{ $isTaken ? 'text-emerald-600' : 'text-rose-600' }}">
+                            {{ $isTaken ? 'Yoklama alındı' : 'Kayıt yok' }}
+                        </p>
                     </a>
                 @empty
                     <p class="text-sm text-slate-500">Bu gun icin aktif ders programi bulunamadi.</p>
@@ -48,45 +55,30 @@
             </div>
         </section>
 
-        @if(auth()->user()->hasRole(['admin','teacher']))
-            <section class="rounded-2xl border border-slate-200 bg-white p-4">
-                <h3 class="font-semibold text-slate-800">Ders Programina Ekle</h3>
-                <form method="POST" action="{{ route('attendance.schedules.store') }}" class="mt-3 grid grid-cols-1 md:grid-cols-6 gap-3">
-                    @csrf
-                    @if(auth()->user()->hasRole('admin'))
-                        <select name="teacher_id" class="rounded-lg border-slate-300" required>
-                            <option value="">Ogretmen sec</option>
-                            @foreach($teachers as $teacher)<option value="{{ $teacher->id }}">{{ $teacher->name }}</option>@endforeach
-                        </select>
-                    @endif
-                    <select name="class_id" class="rounded-lg border-slate-300" required>
-                        <option value="">Sinif sec</option>
-                        @foreach($classes as $class)<option value="{{ $class->id }}">{{ $class->name }}</option>@endforeach
-                    </select>
-                    <select name="lesson_id" class="rounded-lg border-slate-300" required>
-                        <option value="">Ders sec</option>
-                        @foreach($lessons as $lesson)<option value="{{ $lesson->id }}">{{ $lesson->name }}</option>@endforeach
-                    </select>
-                    <select name="day_of_week" class="rounded-lg border-slate-300" required>
-                        <option value="">Gun sec</option>
-                        <option value="1">Pazartesi</option><option value="2">Sali</option><option value="3">Carsamba</option>
-                        <option value="4">Persembe</option><option value="5">Cuma</option><option value="6">Cumartesi</option><option value="7">Pazar</option>
-                    </select>
-                    <input name="start_time" type="time" class="rounded-lg border-slate-300" required>
-                    <input name="end_time" type="time" class="rounded-lg border-slate-300">
-                    <button class="rounded-lg bg-blue-600 text-white px-4 py-2 md:col-span-6">Ders Programina Kaydet</button>
-                </form>
-            </section>
-        @endif
-
         @if($selectedSchedule)
+            @php
+                $isCurrentLesson = false;
+                if ($date === now()->toDateString()) {
+                    $nowTime = now()->format('H:i');
+                    $start = substr((string) $selectedSchedule->start_time, 0, 5);
+                    $end = $selectedSchedule->end_time ? substr((string) $selectedSchedule->end_time, 0, 5) : null;
+                    $isCurrentLesson = $end ? ($start <= $nowTime && $nowTime <= $end) : ($start <= $nowTime);
+                }
+            @endphp
             <section class="rounded-2xl border border-slate-200 bg-white p-4" x-data="attendanceState()">
-                <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                     <div>
-                        <h3 class="font-semibold text-slate-800">{{ $selectedSchedule->class->name }} - {{ $selectedSchedule->lesson?->name ?? $selectedSchedule->lesson_name }} Yoklamasi</h3>
-                        <p class="text-sm text-slate-500">Varsayilan durum: Geldi. Ogrenciye tiklayarak degistirebilirsin.</p>
+                        <h3 class="font-semibold text-slate-800">
+                            {{ $selectedSchedule->class->name }} - {{ $selectedSchedule->lesson?->name ?? $selectedSchedule->lesson_name }} Yoklamasi
+                            @if($isCurrentLesson)
+                                <span class="ml-2 inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2 py-0.5 text-xs font-semibold">Şu anki ders</span>
+                            @endif
+                        </h3>
+                        <p class="text-sm text-slate-500">Varsayilan durum: Geldi. Ogrenci kartina tiklayarak degistirebilirsin.</p>
+                        <p class="text-xs mt-1 {{ $session && $session->taken_at ? 'text-emerald-600' : 'text-rose-600' }}">
+                            {{ $session && $session->taken_at ? 'Bu ders için yoklama kaydedildi.' : 'Bu ders için henüz kayıt yok.' }}
+                        </p>
                     </div>
-                    <button type="button" @click="markClassFull()" class="rounded-lg bg-emerald-600 text-white px-3 py-2 text-sm">Sinif Tam (Hepsi Geldi)</button>
                 </div>
 
                 <form method="POST" action="{{ route('attendance.take') }}" class="mt-4">
@@ -96,16 +88,28 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                         @foreach($students as $student)
                             @php $status = $statusByStudentId[$student->id] ?? 'present'; @endphp
-                            <div class="rounded-xl border border-slate-200 p-3" x-data="{ status: '{{ $status }}' }">
+                            <div class="rounded-xl border p-3 cursor-pointer transition"
+                                 x-data="{
+                                    status: '{{ $status }}',
+                                    nextStatus() {
+                                        this.status = this.status === 'present'
+                                            ? 'absent'
+                                            : (this.status === 'absent'
+                                                ? 'excused'
+                                                : (this.status === 'excused' ? 'medical' : 'present'));
+                                    }
+                                 }"
+                                 @click="nextStatus()"
+                                 :style="status==='present' ? 'border-color:#86efac;background:#f0fdf4;' : (status==='absent' ? 'border-color:#fda4af;background:#fff1f2;' : (status==='excused' ? 'border-color:#fde68a;background:#fffbeb;' : 'border-color:#93c5fd;background:#eff6ff;'))">
                                 <div class="flex items-center justify-between">
                                     <p class="font-semibold text-slate-800">{{ $student->user?->name ?? '-' }}</p>
-                                    <span class="text-xs text-slate-400">#{{ $student->student_number ?? '-' }}</span>
-                                </div>
-                                <div class="mt-2 flex flex-wrap gap-2">
-                                    <button type="button" @click="status='present'" :class="status==='present' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'" class="px-2 py-1 rounded text-xs">Geldi</button>
-                                    <button type="button" @click="status='absent'" :class="status==='absent' ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600'" class="px-2 py-1 rounded text-xs">Gelmedi</button>
-                                    <button type="button" @click="status='excused'" :class="status==='excused' ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600'" class="px-2 py-1 rounded text-xs">Izinli</button>
-                                    <button type="button" @click="status='medical'" :class="status==='medical' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'" class="px-2 py-1 rounded text-xs">Raporlu</button>
+                                    <div class="text-right">
+                                        <span class="block text-xs text-slate-400">#{{ $student->student_number ?? '-' }}</span>
+                                        <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold mt-1"
+                                              :style="status==='present' ? 'background:#dcfce7;color:#15803d;' : (status==='absent' ? 'background:#ffe4e6;color:#be123c;' : (status==='excused' ? 'background:#fef3c7;color:#b45309;' : 'background:#dbeafe;color:#1d4ed8;'))"
+                                              x-text="status==='present' ? 'Geldi' : (status==='absent' ? 'Gelmedi' : (status==='excused' ? 'Izinli' : 'Raporlu'))">
+                                        </span>
+                                    </div>
                                 </div>
                                 <input type="hidden" :value="status" name="statuses[{{ $student->id }}]">
                             </div>
@@ -119,18 +123,7 @@
 
     <script>
         function attendanceState() {
-            return {
-                markClassFull() {
-                    document.querySelectorAll('input[name^="statuses["]').forEach((input) => {
-                        input.value = 'present';
-                    });
-                    document.querySelectorAll('[x-data*=\"status:\"]').forEach((el) => {
-                        if (el.__x && el.__x.$data) {
-                            el.__x.$data.status = 'present';
-                        }
-                    });
-                }
-            };
+            return {};
         }
     </script>
 </x-app-layout>

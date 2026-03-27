@@ -24,18 +24,18 @@ return [
     ],
 
     'whatsapp' => [
-        'provider' => env('WHATSAPP_PROVIDER', 'twilio'),
+        'provider' => env('WHATSAPP_PROVIDER', 'venom'),
+        'process_immediately' => env('WHATSAPP_PROCESS_IMMEDIATELY', false),
     ],
 
-    'twilio' => [
-        'sid' => env('TWILIO_SID'),
-        'token' => env('TWILIO_TOKEN'),
-        'whatsapp_from' => env('TWILIO_WHATSAPP_FROM'),
-    ],
-
-    'meta_whatsapp' => [
-        'token' => env('META_WHATSAPP_TOKEN'),
-        'phone_number_id' => env('META_WHATSAPP_PHONE_NUMBER_ID'),
+    'venom' => [
+        'base_url' => env('VENOM_BASE_URL'),
+        'session' => env('VENOM_SESSION'),
+        'token' => env('VENOM_TOKEN'),
+        'node_command' => env('VENOM_NODE_COMMAND', 'node server.js'),
+        'node_workdir' => env('VENOM_NODE_WORKDIR', 'C:/venom-bot'),
+        'queue_command' => env('WHATSAPP_QUEUE_WORKER_COMMAND', 'php artisan queue:work --queue=default --tries=1 --timeout=120'),
+        'queue_workdir' => env('WHATSAPP_QUEUE_WORKER_WORKDIR', base_path()),
     ],
 
 ];

@@ -1,10 +1,10 @@
-<div class="h-full flex flex-col overflow-y-auto">
-    <div class="h-16 px-5 flex items-center border-b border-slate-200">
+﻿<div class="h-full flex flex-col overflow-y-auto">
+    <div class="lms-sidebar-brand" style="height:64px;min-height:64px;max-height:64px;padding:0 20px;display:flex;align-items:center;box-sizing:border-box;flex:0 0 64px;">
         <a href="{{ url('dashboard') }}" class="flex items-center gap-3">
             <img src="{{ asset('assets/logo.png') }}" alt="LMS Logo" class="h-10 w-10 rounded-lg bg-white p-1 border border-slate-200 object-contain">
             <div>
-                <p class="text-sm font-bold tracking-tight text-slate-800 leading-none">OzelSin LMS</p>
-                <p class="text-[11px] text-slate-500 mt-1">Egitim Yonetimi</p>
+                <p class="text-sm font-bold tracking-tight text-slate-800 leading-none">ÖzelSin LMS</p>
+                <p class="text-[11px] text-slate-500 mt-1">Eğitim Yönetimi</p>
             </div>
         </a>
     </div>
@@ -17,50 +17,44 @@
         @endif
 
         @if(auth()->user()->hasRole(['admin','teacher','student']) && auth()->user()->canAccessModule('books'))
-            <a href="{{ url('books') }}" class="lms-nav-link {{ request()->routeIs('books.*') ? 'active' : '' }}">Kitap Yonetimi</a>
+            <a href="{{ url('books') }}" class="lms-nav-link {{ request()->routeIs('books.*') ? 'active' : '' }}">Kitap Yönetimi</a>
         @endif
 
         @if(auth()->user()->hasRole(['admin','teacher','parent','student']) && auth()->user()->canAccessModule('meetings'))
-            <a href="{{ url('meetings') }}" class="lms-nav-link {{ request()->routeIs('meetings.*') ? 'active' : '' }}">Gorusmeler</a>
+            <a href="{{ url('meetings') }}" class="lms-nav-link {{ request()->routeIs('meetings.*') ? 'active' : '' }}">Görüşmeler</a>
         @endif
 
         @if(auth()->user()->hasRole(['admin','teacher']))
             @if(auth()->user()->canAccessModule('whatsapp'))
-                <a href="{{ url('whatsapp') }}" class="lms-nav-link {{ request()->routeIs('whatsapp.*') ? 'active' : '' }}">Whatsapp Modulu</a>
+                <a href="{{ url('whatsapp') }}" class="lms-nav-link {{ request()->routeIs('whatsapp.*') ? 'active' : '' }}">WhatsApp Modülü</a>
             @endif
             @if(auth()->user()->canAccessModule('reports'))
                 <a href="{{ url('reports') }}" class="lms-nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">Raporlama</a>
             @endif
             @if(auth()->user()->canAccessModule('attendance'))
-                <a href="{{ url('attendance') }}" class="lms-nav-link {{ request()->routeIs('attendance.*') ? 'active' : '' }}">Yoklama Modulu</a>
+                <a href="{{ url('attendance') }}" class="lms-nav-link {{ request()->routeIs('attendance.*') ? 'active' : '' }}">Yoklama Modülü</a>
             @endif
             @if(auth()->user()->canAccessModule('timetables'))
-                <a href="{{ url('timetables') }}" class="lms-nav-link {{ request()->routeIs('timetables.*') ? 'active' : '' }}">Ders Programi</a>
+                <a href="{{ url('timetables') }}" class="lms-nav-link {{ request()->routeIs('timetables.*') ? 'active' : '' }}">Ders Programı</a>
             @endif
         @endif
 
         @if(auth()->user()->canAccessModule('assignments'))
-            <a href="{{ url('assignments') }}" class="lms-nav-link {{ request()->routeIs('assignments.*') ? 'active' : '' }}">Odev Yonetimi</a>
+            <a href="{{ url('assignments') }}" class="lms-nav-link {{ request()->routeIs('assignments.*') ? 'active' : '' }}">Ödev Yönetimi</a>
         @endif
 
         @if(auth()->user()->hasRole('admin'))
             @if(auth()->user()->canAccessModule('lessons'))
-                <a href="{{ url('lessons') }}" class="lms-nav-link {{ request()->routeIs('lessons.*') ? 'active' : '' }}">Ders Ekleme Modulu</a>
+                <a href="{{ url('lessons') }}" class="lms-nav-link {{ request()->routeIs('lessons.*') ? 'active' : '' }}">Ders Ekleme Modülü</a>
             @endif
             @if(auth()->user()->canAccessModule('users'))
-                <a href="{{ url('users') }}" class="lms-nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">Kullanici Yonetimi</a>
+                <a href="{{ url('users') }}" class="lms-nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">Kullanıcı Yönetimi</a>
             @endif
             @if(auth()->user()->canAccessModule('role_permissions'))
-                <a href="{{ route('role-permissions.index') }}" class="lms-nav-link {{ request()->routeIs('role-permissions.*') ? 'active' : '' }}">Rol ve Modul Yetkileri</a>
+                <a href="{{ route('role-permissions.index') }}" class="lms-nav-link {{ request()->routeIs('role-permissions.*') ? 'active' : '' }}">Rol ve Modül Yetkileri</a>
             @endif
         @endif
     </nav>
-
-    <div class="mt-auto p-4 border-t border-slate-200 space-y-2">
-        <a href="{{ url('profile') }}" class="block text-sm text-slate-600 hover:text-slate-900">Profil Ayarlari</a>
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button class="w-full rounded-lg bg-slate-900 text-white px-3 py-2 text-sm">Cikis Yap</button>
-        </form>
-    </div>
 </div>
+
+
