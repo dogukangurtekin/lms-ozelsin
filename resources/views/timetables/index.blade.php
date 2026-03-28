@@ -213,6 +213,37 @@
                 <button class="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm">Programlari Listele</button>
             </form>
 
+            <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-800">PDF Indirme</p>
+                        <p class="text-xs text-slate-500">Ogretmen ve sinif programlarini A4 yatay PDF olarak indirebilirsiniz.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button
+                            type="button"
+                            class="rounded-lg bg-blue-600 text-white px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                            data-pdf-download-button
+                            data-url="{{ route('timetables.teacher-pdf', ['teacher_view_id' => $selectedTeacherId, 'period_count' => $periodCount, 'days' => $selectedDays->values()->all()]) }}"
+                            data-filename="ogretmen-ders-programi.pdf"
+                            @disabled($selectedTeacherId <= 0)
+                        >
+                            Ogretmen PDF Indir
+                        </button>
+                        <button
+                            type="button"
+                            class="rounded-lg bg-emerald-600 text-white px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                            data-pdf-download-button
+                            data-url="{{ route('timetables.class-pdf', ['class_view_id' => $selectedClassId, 'period_count' => $periodCount, 'days' => $selectedDays->values()->all()]) }}"
+                            data-filename="sinif-ders-programi.pdf"
+                            @disabled($selectedClassId <= 0)
+                        >
+                            Sinif PDF Indir
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="mt-4 space-y-4">
                 <div class="rounded-xl border border-slate-200 p-3 overflow-x-auto">
                     <h4 class="font-semibold text-slate-800 mb-2">Ogretmen Programi (Tablo)</h4>
@@ -304,6 +335,14 @@
             <div id="uploadProgressBar" class="h-full bg-emerald-600 transition-all" style="width: 0%"></div>
         </div>
         <p id="uploadProgressText" class="mt-2 text-xs text-slate-500">%0</p>
+    </div>
+
+    <div id="pdfProgressBox" class="fixed right-5 bottom-28 z-50 w-80 rounded-xl border border-slate-200 bg-white shadow-lg p-4 hidden mobile-progress-box">
+        <p id="pdfProgressLabel" class="text-sm font-semibold text-slate-700">PDF hazirlaniyor...</p>
+        <div class="mt-2 h-3 rounded-full bg-slate-200 overflow-hidden">
+            <div id="pdfProgressBar" class="h-full bg-blue-600 transition-all" style="width: 0%"></div>
+        </div>
+        <p id="pdfProgressText" class="mt-2 text-xs text-slate-500">%0</p>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -439,12 +478,23 @@
             const progressBar = document.getElementById('uploadProgressBar');
             const progressText = document.getElementById('uploadProgressText');
             const progressLabel = document.getElementById('uploadProgressLabel');
+            const pdfProgressBox = document.getElementById('pdfProgressBox');
+            const pdfProgressBar = document.getElementById('pdfProgressBar');
+            const pdfProgressText = document.getElementById('pdfProgressText');
+            const pdfProgressLabel = document.getElementById('pdfProgressLabel');
 
             function setProgress(percent, label) {
                 progressBox.classList.remove('hidden');
                 progressBar.style.width = `${percent}%`;
                 progressText.textContent = `%${percent}`;
                 if (label) progressLabel.textContent = label;
+            }
+
+            function setPdfProgress(percent, label) {
+                pdfProgressBox.classList.remove('hidden');
+                pdfProgressBar.style.width = `${percent}%`;
+                pdfProgressText.textContent = `%${percent}`;
+                if (label) pdfProgressLabel.textContent = label;
             }
 
             async function convertExcelFileToRows(file) {
@@ -499,6 +549,56 @@
                     };
 
                     xhr.send(formData);
+                });
+            });
+
+            document.querySelectorAll('[data-pdf-download-button]').forEach((button) => {
+                button.addEventListener('click', async () => {
+                    const url = button.dataset.url;
+                    const filename = button.dataset.filename || 'ders-programi.pdf';
+                    if (!url || button.disabled) return;
+
+                    button.disabled = true;
+                    let fakePercent = 0;
+                    setPdfProgress(3, 'PDF hazirlaniyor...');
+
+                    const timer = window.setInterval(() => {
+                        fakePercent = Math.min(fakePercent + 7, 90);
+                        setPdfProgress(fakePercent, 'PDF hazirlaniyor...');
+                    }, 250);
+
+                    try {
+                        const response = await fetch(url, {
+                            method: 'GET',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('PDF olusturulamadi.');
+                        }
+
+                        const blob = await response.blob();
+                        const downloadUrl = window.URL.createObjectURL(blob);
+                        const anchor = document.createElement('a');
+                        anchor.href = downloadUrl;
+                        anchor.download = filename;
+                        document.body.appendChild(anchor);
+                        setPdfProgress(100, 'PDF indiriliyor...');
+                        anchor.click();
+                        anchor.remove();
+                        window.URL.revokeObjectURL(downloadUrl);
+                    } catch (error) {
+                        alert('PDF indirme sirasinda hata olustu.');
+                        setPdfProgress(0, 'PDF olusturulamadi.');
+                    } finally {
+                        window.clearInterval(timer);
+                        window.setTimeout(() => {
+                            pdfProgressBox.classList.add('hidden');
+                        }, 1200);
+                        button.disabled = false;
+                    }
                 });
             });
         })();

@@ -8,6 +8,8 @@ use App\Models\SchoolClass;
 use App\Models\TimetableSetting;
 use App\Models\TeacherSchedule;
 use App\Models\User;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -334,6 +336,7 @@ class TimetableController extends Controller
             ->whereHas('roles', fn ($q) => $q->where('name', 'teacher'))
             ->get(['id', 'name'])
             ->keyBy(fn ($t) => mb_strtolower(trim((string) $t->name)));
+        $lessonSelect = $hasLessonShortName ? ['id', 'name', 'short_name'] : ['id', 'name'];
         $lessonsRaw = Lesson::query()->where('is_active', true)->get($lessonSelect);
         $lessonsByName = $lessonsRaw->keyBy(fn ($l) => mb_strtolower(trim((string) $l->name)));
         foreach ($lessonsRaw as $lessonRow) {
@@ -448,6 +451,96 @@ class TimetableController extends Controller
         ]);
     }
 
+    public function teacherPdf(Request $request)
+    {
+        $teacherId = (int) $request->input('teacher_view_id', 0);
+        abort_unless($teacherId > 0, 422, 'Ogretmen seciniz.');
+
+        $hasLessonShortName = \Illuminate\Support\Facades\Schema::hasColumn('lessons', 'short_name');
+        $settings = $this->getOrCreateSettings();
+        $selectedDays = $this->resolveSelectedDays($request);
+        $periodCount = $this->resolvePeriodCount($request);
+        $timeline = $this->buildTimeline($periodCount, $settings);
+        $dayOptions = collect(self::DAY_LABELS)->map(fn ($name, $id) => ['id' => $id, 'name' => $name])->values();
+
+        $teacher = User::query()->findOrFail($teacherId, ['id', 'name']);
+        $program = TeacherSchedule::query()
+            ->with(['class:id,name', 'lesson:id,name' . ($hasLessonShortName ? ',short_name' : '')])
+            ->where('teacher_id', $teacherId)
+            ->where('is_active', true)
+            ->whereIn('day_of_week', $selectedDays->all())
+            ->whereNotNull('period_no')
+            ->where('period_no', '<=', $periodCount)
+            ->orderBy('day_of_week')
+            ->orderBy('period_no')
+            ->get();
+
+        $programMap = [];
+        foreach ($program as $slot) {
+            $programMap[$slot->day_of_week][$slot->period_no] = $slot;
+        }
+
+        return $this->renderTimetablePdf(
+            viewName: 'timetables.pdf',
+            data: [
+                'title' => 'Ogretmen Ders Programi',
+                'subtitle' => $teacher->name,
+                'timeline' => $timeline,
+                'selectedDays' => $selectedDays,
+                'dayOptions' => $dayOptions,
+                'programMap' => $programMap,
+                'mode' => 'teacher',
+                'generatedAt' => now(),
+            ],
+            filename: 'ogretmen-ders-programi-' . $teacherId . '.pdf'
+        );
+    }
+
+    public function classPdf(Request $request)
+    {
+        $classId = (int) $request->input('class_view_id', 0);
+        abort_unless($classId > 0, 422, 'Sinif seciniz.');
+
+        $hasLessonShortName = \Illuminate\Support\Facades\Schema::hasColumn('lessons', 'short_name');
+        $settings = $this->getOrCreateSettings();
+        $selectedDays = $this->resolveSelectedDays($request);
+        $periodCount = $this->resolvePeriodCount($request);
+        $timeline = $this->buildTimeline($periodCount, $settings);
+        $dayOptions = collect(self::DAY_LABELS)->map(fn ($name, $id) => ['id' => $id, 'name' => $name])->values();
+
+        $class = SchoolClass::query()->findOrFail($classId, ['id', 'name']);
+        $program = TeacherSchedule::query()
+            ->with(['teacher:id,name', 'lesson:id,name' . ($hasLessonShortName ? ',short_name' : '')])
+            ->where('class_id', $classId)
+            ->where('is_active', true)
+            ->whereIn('day_of_week', $selectedDays->all())
+            ->whereNotNull('period_no')
+            ->where('period_no', '<=', $periodCount)
+            ->orderBy('day_of_week')
+            ->orderBy('period_no')
+            ->get();
+
+        $programMap = [];
+        foreach ($program as $slot) {
+            $programMap[$slot->day_of_week][$slot->period_no] = $slot;
+        }
+
+        return $this->renderTimetablePdf(
+            viewName: 'timetables.pdf',
+            data: [
+                'title' => 'Sinif Ders Programi',
+                'subtitle' => $class->name,
+                'timeline' => $timeline,
+                'selectedDays' => $selectedDays,
+                'dayOptions' => $dayOptions,
+                'programMap' => $programMap,
+                'mode' => 'class',
+                'generatedAt' => now(),
+            ],
+            filename: 'sinif-ders-programi-' . $classId . '.pdf'
+        );
+    }
+
     public function destroy(Request $request, TeacherSchedule $schedule)
     {
         $schedule->delete();
@@ -506,6 +599,41 @@ class TimetableController extends Controller
                 'lunch_duration' => 40,
             ]
         );
+    }
+
+    private function resolveSelectedDays(Request $request)
+    {
+        $selectedDays = collect($request->input('days', [1, 2, 3, 4, 5]))
+            ->map(fn ($d) => (int) $d)
+            ->filter(fn ($d) => $d >= 1 && $d <= 7)
+            ->unique()
+            ->sort()
+            ->values();
+
+        return $selectedDays->isEmpty() ? collect([1, 2, 3, 4, 5]) : $selectedDays;
+    }
+
+    private function resolvePeriodCount(Request $request): int
+    {
+        return max(1, min(12, (int) $request->input('period_count', 9)));
+    }
+
+    private function renderTimetablePdf(string $viewName, array $data, string $filename)
+    {
+        $html = view($viewName, $data)->render();
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', false);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html, 'UTF-8');
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        return response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     private function buildTimeline(int $periodCount, TimetableSetting $settings): array

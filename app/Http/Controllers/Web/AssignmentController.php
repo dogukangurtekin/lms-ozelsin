@@ -12,9 +12,12 @@ use App\Models\AssignmentSubmission;
 use App\Models\Book;
 use App\Models\Lesson;
 use App\Models\SchoolClass;
+use App\Models\Student;
 use App\Models\User;
 use App\Services\AssignmentService;
+use App\Services\PushNotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class AssignmentController extends Controller
@@ -106,7 +109,7 @@ class AssignmentController extends Controller
         return view('assignments.wizard', compact('classes', 'students', 'lessons', 'books', 'booksForJs', 'lessonsForJs'));
     }
 
-    public function storeWizard(Request $request, AssignmentService $service)
+    public function storeWizard(Request $request, AssignmentService $service, PushNotificationService $pushNotifications)
     {
         $user = $request->user();
         abort_unless($user->hasRole(['admin', 'teacher']), 403);
@@ -133,7 +136,8 @@ class AssignmentController extends Controller
         ]);
 
         $created = 0;
-        DB::transaction(function () use ($data, $service, $user, &$created) {
+        $createdAssignments = collect();
+        DB::transaction(function () use ($data, $service, $user, &$created, &$createdAssignments) {
             $bookLabel = null;
             if (!empty($data['book_id'])) {
                 $book = Book::query()->find((int) $data['book_id']);
@@ -169,11 +173,11 @@ class AssignmentController extends Controller
             ];
 
             if ($data['assign_scope'] === 'class') {
-                $service->create($basePayload + [
+                $createdAssignments->push($service->create($basePayload + [
                     'class_id' => $data['class_id'] ?? null,
                     'student_id' => null,
                     'attachment' => $data['attachment'] ?? null,
-                ]);
+                ]));
                 $created = 1;
                 return;
             }
@@ -187,7 +191,7 @@ class AssignmentController extends Controller
                 if ($idx === 0 && !empty($data['attachment'])) {
                     $payload['attachment'] = $data['attachment'];
                 }
-                $service->create($payload);
+                $createdAssignments->push($service->create($payload));
                 $created++;
             }
         });
@@ -196,12 +200,17 @@ class AssignmentController extends Controller
             return back()->withErrors(['student_ids' => 'Ogrenci bazli secimde en az bir ogrenci secmelisiniz.']);
         }
 
+        $createdAssignments->each(function (Assignment $assignment) use ($pushNotifications) {
+            $this->notifyAssignmentCreated($assignment, $pushNotifications);
+        });
+
         return redirect()->route('assignments.index')->with('status', "Odev olusturuldu. Kayit: {$created}");
     }
 
-    public function store(StoreAssignmentRequest $request, AssignmentService $service)
+    public function store(StoreAssignmentRequest $request, AssignmentService $service, PushNotificationService $pushNotifications)
     {
-        $service->create($request->validated() + ['teacher_id' => $request->user()->id]);
+        $assignment = $service->create($request->validated() + ['teacher_id' => $request->user()->id]);
+        $this->notifyAssignmentCreated($assignment, $pushNotifications);
         return redirect()->route('assignments.index')->with('status', 'Odev olusturuldu.');
     }
 
@@ -267,5 +276,55 @@ class AssignmentController extends Controller
 
         $service->grade($submission, $request->validated());
         return back()->with('status', 'Odev puanlandi.');
+    }
+
+    private function notifyAssignmentCreated(Assignment $assignment, PushNotificationService $pushNotifications): void
+    {
+        $recipientUserIds = $this->assignmentRecipientUserIds($assignment);
+        if ($recipientUserIds->isEmpty()) {
+            return;
+        }
+
+        $assignment->loadMissing(['class:id,name', 'student:id,name']);
+        $targetLabel = $assignment->class?->name ?? $assignment->student?->name ?? 'ogrenci';
+
+        $pushNotifications->sendToUsers(
+            $recipientUserIds,
+            'Yeni odev yayimlandi',
+            "Sayin kullanici, {$targetLabel} icin {$assignment->title} baslikli yeni odev yayimlandi.",
+            route('assignments.show', $assignment)
+        );
+    }
+
+    private function assignmentRecipientUserIds(Assignment $assignment): Collection
+    {
+        $studentIds = collect();
+
+        if ($assignment->student_id) {
+            $studentIds->push((int) $assignment->student_id);
+        } elseif ($assignment->class_id) {
+            $studentIds = Student::query()
+                ->where('class_id', $assignment->class_id)
+                ->pluck('user_id');
+        }
+
+        if ($studentIds->isEmpty()) {
+            return collect();
+        }
+
+        $studentProfileIds = Student::query()
+            ->whereIn('user_id', $studentIds)
+            ->pluck('id');
+
+        $parentUserIds = DB::table('parent_student')
+            ->join('parents', 'parents.id', '=', 'parent_student.parent_id')
+            ->whereIn('parent_student.student_id', $studentProfileIds)
+            ->pluck('parents.user_id');
+
+        return $studentIds
+            ->merge($parentUserIds)
+            ->filter()
+            ->unique()
+            ->values();
     }
 }

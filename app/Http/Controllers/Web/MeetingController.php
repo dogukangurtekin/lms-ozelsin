@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateMeetingRequest;
 use App\Models\Meeting;
 use App\Models\User;
 use App\Services\MeetingService;
+use App\Services\PushNotificationService;
 
 class MeetingController extends Controller
 {
@@ -50,17 +51,20 @@ class MeetingController extends Controller
 
     public function create()
     {
-        $students = User::whereHas('roles', fn($q) => $q->where('name', 'student'))->get(['id', 'name']);
-        $parents = User::whereHas('roles', fn($q) => $q->where('name', 'parent'))->get(['id', 'name']);
+        $students = User::whereHas('roles', fn ($q) => $q->where('name', 'student'))->get(['id', 'name']);
+        $parents = User::whereHas('roles', fn ($q) => $q->where('name', 'parent'))->get(['id', 'name']);
+
         return view('meetings.create', compact('students', 'parents'));
     }
 
-    public function store(StoreMeetingRequest $request, MeetingService $service)
+    public function store(StoreMeetingRequest $request, MeetingService $service, PushNotificationService $pushNotifications)
     {
-        $service->create($request->validated() + [
+        $meeting = $service->create($request->validated() + [
             'teacher_id' => $request->user()->id,
             'status' => $request->input('status', 'scheduled'),
         ]);
+
+        $this->notifyMeetingCreated($meeting, $pushNotifications);
 
         return redirect()->route('meetings.index')->with('status', 'Gorusme olusturuldu.');
     }
@@ -69,8 +73,9 @@ class MeetingController extends Controller
     {
         abort_unless(request()->user()->hasRole(['admin', 'teacher']), 403);
 
-        $students = User::whereHas('roles', fn($q) => $q->where('name', 'student'))->get(['id', 'name']);
-        $parents = User::whereHas('roles', fn($q) => $q->where('name', 'parent'))->get(['id', 'name']);
+        $students = User::whereHas('roles', fn ($q) => $q->where('name', 'student'))->get(['id', 'name']);
+        $parents = User::whereHas('roles', fn ($q) => $q->where('name', 'parent'))->get(['id', 'name']);
+
         return view('meetings.edit', compact('meeting', 'students', 'parents'));
     }
 
@@ -81,6 +86,7 @@ class MeetingController extends Controller
         }
 
         $service->update($meeting, $request->validated());
+
         return redirect()->route('meetings.index')->with('status', 'Gorusme guncellendi.');
     }
 
@@ -92,6 +98,7 @@ class MeetingController extends Controller
         }
 
         $meeting->delete();
+
         return back()->with('status', 'Gorusme silindi.');
     }
 
@@ -133,6 +140,30 @@ class MeetingController extends Controller
 
         return redirect()
             ->route('meetings.show', $meeting)
-            ->with('status', 'Öğretmen notu güncellendi.');
+            ->with('status', 'Ogretmen notu guncellendi.');
+    }
+
+    private function notifyMeetingCreated(Meeting $meeting, PushNotificationService $pushNotifications): void
+    {
+        $meeting->loadMissing(['student:id,name', 'parentUser:id,name']);
+
+        $recipientUserIds = collect([$meeting->student_id, $meeting->parent_id])
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($recipientUserIds->isEmpty()) {
+            return;
+        }
+
+        $studentName = $meeting->student?->name ?? 'ogrenci';
+        $meetingTime = optional($meeting->meeting_at)->format('d.m.Y H:i') ?: 'planlanan zaman';
+
+        $pushNotifications->sendToUsers(
+            $recipientUserIds,
+            'Yeni gorusme bilgilendirmesi',
+            "{$studentName} icin {$meetingTime} tarihli yeni bir gorusme planlandi.",
+            route('meetings.show', $meeting)
+        );
     }
 }

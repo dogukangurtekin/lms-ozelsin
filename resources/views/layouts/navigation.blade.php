@@ -14,6 +14,7 @@
     <nav class="px-3 space-y-1 text-sm">
         @if(auth()->user()->canAccessModule('dashboard'))
             <a href="{{ url('dashboard') }}" class="lms-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
+            <a href="{{ route('notifications.index') }}" class="lms-nav-link {{ request()->routeIs('notifications.*') || request()->routeIs('push.*') ? 'active' : '' }}">Bildirimler</a>
         @endif
 
         @if(auth()->user()->hasRole(['admin','teacher','student']) && auth()->user()->canAccessModule('books'))

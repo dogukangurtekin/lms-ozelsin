@@ -11,6 +11,7 @@ use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\WhatsappLog;
 use App\Models\WhatsappSetting;
+use App\Services\PushNotificationService;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
@@ -78,7 +79,7 @@ class WhatsappController extends Controller
         ]);
     }
 
-    public function send(Request $request)
+    public function send(Request $request, PushNotificationService $pushNotifications)
     {
         $data = $request->validate([
             'target_type' => 'required|in:parent_of_students,teachers,parents,all_active',
@@ -175,6 +176,13 @@ class WhatsappController extends Controller
                             'wa_link' => $this->buildWhatsappDeepLink($phone, $message),
                             'pdf_link' => $pdfUrl,
                         ];
+
+                        $pushNotifications->sendToUsers(
+                            [(int) $parent->id],
+                            'Veli raporu hazir',
+                            (($student->user?->name ?? 'Ogrenci') . ' ogrencisine ait rapor hazirlandi. Baglanti uzerinden goruntuleyebilirsiniz.'),
+                            $pdfUrl
+                        );
                     }
                 }
             }, 'id');

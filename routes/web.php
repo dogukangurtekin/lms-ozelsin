@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\AttendanceController;
 use App\Http\Controllers\Web\LessonController;
 use App\Http\Controllers\Web\TimetableController;
 use App\Http\Controllers\Web\MeetingController;
+use App\Http\Controllers\Web\PushNotificationController;
 use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\UserManagementController;
 use App\Http\Controllers\Web\WhatsappController;
@@ -21,6 +22,12 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware('module:dashboard');
+    Route::get('/notifications', [PushNotificationController::class, 'index'])->name('notifications.index')->middleware('module:dashboard');
+    Route::get('/push/public-key', [PushNotificationController::class, 'publicKey'])->name('push.public-key');
+    Route::post('/push/subscribe', [PushNotificationController::class, 'subscribe'])->name('push.subscribe');
+    Route::delete('/push/unsubscribe', [PushNotificationController::class, 'unsubscribe'])->name('push.unsubscribe');
+    Route::post('/push/send', [PushNotificationController::class, 'send'])->name('push.send')->middleware('role:admin')->middleware('module:dashboard');
+    Route::post('/notifications/{notificationLog}/resend', [PushNotificationController::class, 'resend'])->name('notifications.resend')->middleware('role:admin')->middleware('module:dashboard');
 
     Route::get('books/create', [BookController::class, 'create'])->name('books.create')->middleware('role:admin,teacher')->middleware('module:books');
     Route::get('books', [BookController::class, 'index'])->name('books.index')->middleware('role:admin,teacher,student')->middleware('module:books');
@@ -87,6 +94,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('timetables/move', [TimetableController::class, 'move'])->name('timetables.move')->middleware('role:admin,teacher')->middleware('module:timetables');
     Route::post('timetables/import', [TimetableController::class, 'import'])->name('timetables.import')->middleware('role:admin,teacher')->middleware('module:timetables');
     Route::get('timetables/template', [TimetableController::class, 'downloadTemplate'])->name('timetables.template')->middleware('role:admin,teacher')->middleware('module:timetables');
+    Route::get('timetables/teacher-pdf', [TimetableController::class, 'teacherPdf'])->name('timetables.teacher-pdf')->middleware('role:admin,teacher')->middleware('module:timetables');
+    Route::get('timetables/class-pdf', [TimetableController::class, 'classPdf'])->name('timetables.class-pdf')->middleware('role:admin,teacher')->middleware('module:timetables');
     Route::delete('timetables/{schedule}', [TimetableController::class, 'destroy'])->name('timetables.destroy')->middleware('role:admin,teacher')->middleware('module:timetables');
     Route::get('whatsapp', [WhatsappController::class, 'index'])->name('whatsapp.index')->middleware('role:admin,teacher')->middleware('module:whatsapp');
     Route::post('whatsapp/send', [WhatsappController::class, 'send'])->name('whatsapp.send')->middleware('role:admin,teacher')->middleware('module:whatsapp');

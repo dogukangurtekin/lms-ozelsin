@@ -11,6 +11,8 @@ use App\Models\Meeting;
 use App\Models\TeacherSchedule;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -84,6 +86,7 @@ class DashboardController extends Controller
         $teacherPeriods = collect();
         $teacherScheduleMap = [];
         $teacherPeriodTimeMap = [];
+        $pushSubscriptionCount = 0;
 
         if ($currentUser && $currentUser->hasRole('teacher')) {
             $teacherSchedules = TeacherSchedule::query()
@@ -112,6 +115,12 @@ class DashboardController extends Controller
             }
         }
 
+        if ($currentUser && Schema::hasTable('push_subscriptions')) {
+            $pushSubscriptionCount = DB::table('push_subscriptions')
+                ->where('user_id', $currentUser->id)
+                ->count();
+        }
+
         return view('dashboard.index', compact(
             'role',
             'stats',
@@ -123,7 +132,8 @@ class DashboardController extends Controller
             'teacherDays',
             'teacherPeriods',
             'teacherScheduleMap',
-            'teacherPeriodTimeMap'
+            'teacherPeriodTimeMap',
+            'pushSubscriptionCount'
         ));
     }
 }

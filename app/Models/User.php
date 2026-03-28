@@ -98,4 +98,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Lesson::class, 'lesson_teacher', 'teacher_id', 'lesson_id')->withTimestamps();
     }
+
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
 }
