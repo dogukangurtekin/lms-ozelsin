@@ -93,7 +93,7 @@ function initPushControls() {
             }
 
             const registration = await navigator.serviceWorker.ready;
-            const publicKeyResponse = await window.axios.get(`${baseUrl}/push/public-key`);
+            const publicKeyResponse = await window.axios.get(`${baseUrl}/webpush/public-key`);
             const publicKey = publicKeyResponse.data.publicKey;
             const existingSubscription = await registration.pushManager.getSubscription();
 
@@ -106,7 +106,7 @@ function initPushControls() {
                 applicationServerKey: urlBase64ToUint8Array(publicKey),
             });
 
-            await window.axios.post(`${baseUrl}/push/subscribe`, {
+            await window.axios.post(`${baseUrl}/webpush/subscribe`, {
                 endpoint: subscription.endpoint,
                 keys: subscription.toJSON().keys,
                 contentEncoding: 'aes128gcm',
@@ -138,7 +138,7 @@ function initPushControls() {
             const subscription = await registration.pushManager.getSubscription();
 
             if (subscription) {
-                await window.axios.delete(`${baseUrl}/push/unsubscribe`, {
+                await window.axios.delete(`${baseUrl}/webpush/unsubscribe`, {
                     data: { endpoint: subscription.endpoint },
                 });
                 await subscription.unsubscribe();

@@ -22,12 +22,12 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware('module:dashboard');
-    Route::get('/notifications', [PushNotificationController::class, 'index'])->name('notifications.index')->middleware('module:dashboard');
-    Route::get('/push/public-key', [PushNotificationController::class, 'publicKey'])->name('push.public-key');
-    Route::post('/push/subscribe', [PushNotificationController::class, 'subscribe'])->name('push.subscribe');
-    Route::delete('/push/unsubscribe', [PushNotificationController::class, 'unsubscribe'])->name('push.unsubscribe');
-    Route::post('/push/send', [PushNotificationController::class, 'send'])->name('push.send')->middleware('role:admin')->middleware('module:dashboard');
-    Route::post('/notifications/{notificationLog}/resend', [PushNotificationController::class, 'resend'])->name('notifications.resend')->middleware('role:admin')->middleware('module:dashboard');
+    Route::get('/app-notifications', [PushNotificationController::class, 'index'])->name('notifications.index')->middleware('module:dashboard');
+    Route::get('/webpush/public-key', [PushNotificationController::class, 'publicKey'])->name('push.public-key');
+    Route::post('/webpush/subscribe', [PushNotificationController::class, 'subscribe'])->name('push.subscribe');
+    Route::delete('/webpush/unsubscribe', [PushNotificationController::class, 'unsubscribe'])->name('push.unsubscribe');
+    Route::post('/webpush/send', [PushNotificationController::class, 'send'])->name('push.send')->middleware('role:admin')->middleware('module:dashboard');
+    Route::post('/app-notifications/{notificationLog}/resend', [PushNotificationController::class, 'resend'])->name('notifications.resend')->middleware('role:admin')->middleware('module:dashboard');
 
     Route::get('books/create', [BookController::class, 'create'])->name('books.create')->middleware('role:admin,teacher')->middleware('module:books');
     Route::get('books', [BookController::class, 'index'])->name('books.index')->middleware('role:admin,teacher,student')->middleware('module:books');
