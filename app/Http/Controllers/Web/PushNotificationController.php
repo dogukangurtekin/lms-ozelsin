@@ -21,6 +21,8 @@ class PushNotificationController extends Controller
     public function index(Request $request)
     {
         $pushSubscriptionCount = 0;
+        $notificationLogs = collect();
+        $failedLogs = collect();
 
         if (Schema::hasTable('push_subscriptions')) {
             $pushSubscriptionCount = PushSubscriptionModel::query()
@@ -32,28 +34,30 @@ class PushNotificationController extends Controller
         $search = trim((string) $request->input('q', ''));
         $failedOnly = $request->boolean('failed_only');
 
-        $notificationLogs = NotificationLog::query()
-            ->with('user:id,name')
-            ->when($statusFilter !== '', fn ($query) => $query->where('status', $statusFilter))
-            ->when($failedOnly, fn ($query) => $query->whereIn('status', ['failed', 'partial', 'no_target']))
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($inner) use ($search) {
-                    $inner->where('title', 'like', "%{$search}%")
-                        ->orWhere('body', 'like', "%{$search}%")
-                        ->orWhere('target_summary', 'like', "%{$search}%")
-                        ->orWhere('error_message', 'like', "%{$search}%");
-                });
-            })
-            ->latest('sent_at')
-            ->limit(50)
-            ->get();
+        if (Schema::hasTable('notification_logs')) {
+            $notificationLogs = NotificationLog::query()
+                ->with('user:id,name')
+                ->when($statusFilter !== '', fn ($query) => $query->where('status', $statusFilter))
+                ->when($failedOnly, fn ($query) => $query->whereIn('status', ['failed', 'partial', 'no_target']))
+                ->when($search !== '', function ($query) use ($search) {
+                    $query->where(function ($inner) use ($search) {
+                        $inner->where('title', 'like', "%{$search}%")
+                            ->orWhere('body', 'like', "%{$search}%")
+                            ->orWhere('target_summary', 'like', "%{$search}%")
+                            ->orWhere('error_message', 'like', "%{$search}%");
+                    });
+                })
+                ->latest('sent_at')
+                ->limit(50)
+                ->get();
 
-        $failedLogs = NotificationLog::query()
-            ->with('user:id,name')
-            ->whereIn('status', ['failed', 'partial', 'no_target'])
-            ->latest('sent_at')
-            ->limit(20)
-            ->get();
+            $failedLogs = NotificationLog::query()
+                ->with('user:id,name')
+                ->whereIn('status', ['failed', 'partial', 'no_target'])
+                ->latest('sent_at')
+                ->limit(20)
+                ->get();
+        }
 
         return view('notifications.index', compact(
             'pushSubscriptionCount',
