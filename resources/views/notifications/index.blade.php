@@ -70,6 +70,10 @@
                     iPhone kullaniyorsaniz Safari uzerinden Paylas > Ana Ekrana Ekle ile kurulumu tamamlayin. Android cihazlarda kurulum butonu otomatik pencereyi acabilir.
                 </div>
 
+                <div class="mt-3 rounded-lg border border-sky-200 bg-sky-50 px-3 py-3 text-sm text-sky-900">
+                    Push destek hedefi: Android icin Chrome, Edge, Firefox, Opera ve Samsung Internet; Windows ve Linux icin Chrome, Edge ve Firefox; macOS icin Safari, Chrome ve Edge; iPhone ve iPad icin Ana Ekrana eklenmis web uygulamasi.
+                </div>
+
                 <div class="mt-4 grid gap-3 md:grid-cols-2">
                     @foreach($resolvedPreferences as $preference)
                         <div class="rounded-xl border border-slate-200 bg-white px-4 py-3">

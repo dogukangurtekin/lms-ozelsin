@@ -57,8 +57,7 @@ function initPushControls() {
     const statusBox = document.querySelector('[data-push-status]');
     const countBox = document.querySelector('[data-push-count]');
     const baseUrl = getAppBaseUrl();
-    const isIos = isIosDevice();
-    const isStandalone = isRunningStandalone();
+    const support = getPushSupportDetails();
 
     if (!enableButton || !statusBox) {
         return;
@@ -86,14 +85,8 @@ function initPushControls() {
         setBusy(true);
 
         try {
-            if (isIos && !isStandalone) {
-                throw new Error('iPhone icin once Safari uzerinden Paylas > Ana Ekrana Ekle ile uygulamayi kurun.');
-            }
-
-            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                throw new Error(isIos
-                    ? 'iPhone push bildirimi sadece Ana Ekrana eklenmis Safari web uygulamasinda calisir.'
-                    : 'Bu tarayici push bildirimi desteklemiyor.');
+            if (!support.canSubscribe) {
+                throw new Error(support.message);
             }
 
             const permission = await Notification.requestPermission();
@@ -175,8 +168,7 @@ function getAppBaseUrl() {
 function initPwaInstallControls() {
     const installButtons = document.querySelectorAll('[data-pwa-install]');
     const installStatus = document.querySelector('[data-pwa-install-status]');
-    const isIos = isIosDevice();
-    const isStandalone = isRunningStandalone();
+    const install = getInstallSupportDetails();
 
     if (!installButtons.length || !installStatus) {
         return;
@@ -193,7 +185,7 @@ function initPwaInstallControls() {
         }`;
     };
 
-    if (isStandalone) {
+    if (install.isStandalone) {
         installButtons.forEach((button) => {
             button.disabled = true;
         });
@@ -201,26 +193,25 @@ function initPwaInstallControls() {
         return;
     }
 
-    if (isIos) {
+    if (install.manualOnly) {
         installButtons.forEach((button) => {
             button.disabled = false;
         });
-
-        setStatus('iPhone kurulumu Safari uzerinden yapilir. Safari’de Paylas tusuna dokunup Ana Ekrana Ekle secenegini kullanin.');
+        setStatus(install.message);
     }
 
     installButtons.forEach((button) => {
-        button.disabled = !window.deferredPwaPrompt;
+        button.disabled = install.manualOnly ? false : !window.deferredPwaPrompt;
 
         button.addEventListener('click', async () => {
             try {
-                if (isIos) {
-                    setStatus('iPhone’da otomatik kurulum penceresi yok. Safari > Paylas > Ana Ekrana Ekle adimlarini izleyin.');
+                if (install.manualOnly) {
+                    setStatus(install.message);
                     return;
                 }
 
                 if (!window.deferredPwaPrompt) {
-                    setStatus('Bu cihazda kurulum penceresi henuz hazir degil.', 'rose');
+                    setStatus(install.message || 'Bu cihazda kurulum penceresi henuz hazir degil.', 'rose');
                     return;
                 }
 
@@ -253,6 +244,134 @@ function isIosDevice() {
 function isRunningStandalone() {
     return window.matchMedia?.('(display-mode: standalone)').matches
         || window.navigator.standalone === true;
+}
+
+function getInstallSupportDetails() {
+    const isStandalone = isRunningStandalone();
+    const platform = getPlatformType();
+    const browser = getBrowserType();
+
+    if (isStandalone) {
+        return { isStandalone: true, manualOnly: false, message: '' };
+    }
+
+    if (platform === 'ios') {
+        return {
+            isStandalone: false,
+            manualOnly: true,
+            message: 'iPhone ve iPad kurulumu Paylas menusu ile yapilir. Safari, Chrome, Edge veya Firefox icinde Paylas > Ana Ekrana Ekle adimlarini kullanin.',
+        };
+    }
+
+    if (platform === 'macos' && browser === 'safari') {
+        return {
+            isStandalone: false,
+            manualOnly: true,
+            message: 'macOS Safari icinde uygulamayi kurmak icin Dosya > Dock’a Ekle secenegini kullanin.',
+        };
+    }
+
+    if (platform === 'windows' || platform === 'linux' || platform === 'android' || platform === 'macos') {
+        if (browser === 'firefox') {
+            return {
+                isStandalone: false,
+                manualOnly: true,
+                message: 'Firefox bildirimleri destekler ancak PWA kurulum penceresi sunmaz. Kurulum icin Chrome veya Edge kullanin.',
+            };
+        }
+    }
+
+    return {
+        isStandalone: false,
+        manualOnly: false,
+        message: 'Bu cihazda otomatik kurulum penceresi henuz hazir degil.',
+    };
+}
+
+function getPushSupportDetails() {
+    const platform = getPlatformType();
+    const browser = getBrowserType();
+    const hasBaseSupport = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+
+    if (platform === 'ios') {
+        if (!hasBaseSupport) {
+            return {
+                canSubscribe: false,
+                message: 'Bu iPhone veya iPad kombinasyonunda web push kullanilamiyor. iOS 16.4+ ve guncel Safari tabanli tarayici gerekli.',
+            };
+        }
+
+        if (!isRunningStandalone()) {
+            return {
+                canSubscribe: false,
+                message: 'iPhone ve iPad icin push bildirimi ancak Ana Ekrana eklenmis web uygulamasinda calisir.',
+            };
+        }
+
+        return { canSubscribe: true, message: '' };
+    }
+
+    if (hasBaseSupport) {
+        return { canSubscribe: true, message: '' };
+    }
+
+    if (platform === 'macos' && browser === 'firefox') {
+        return {
+            canSubscribe: false,
+            message: 'macOS Firefox bu kurulumda push icin uygun degil. Safari veya Chrome/Edge kullanin.',
+        };
+    }
+
+    if (platform === 'windows' || platform === 'linux') {
+        return {
+            canSubscribe: false,
+            message: 'Windows ve Linux icin Chrome, Edge veya Firefox uzerinden bildirim izni verin.',
+        };
+    }
+
+    if (platform === 'android') {
+        return {
+            canSubscribe: false,
+            message: 'Android icin Chrome, Edge, Firefox, Opera veya Samsung Internet kullanin.',
+        };
+    }
+
+    if (platform === 'macos') {
+        return {
+            canSubscribe: false,
+            message: 'macOS icin Safari, Chrome veya Edge uzerinden bildirim izni verin.',
+        };
+    }
+
+    return {
+        canSubscribe: false,
+        message: 'Bu tarayici push bildirimi desteklemiyor.',
+    };
+}
+
+function getPlatformType() {
+    const userAgent = window.navigator.userAgent || '';
+    const platform = window.navigator.platform || '';
+
+    if (isIosDevice()) return 'ios';
+    if (/Android/i.test(userAgent)) return 'android';
+    if (/Win/i.test(platform)) return 'windows';
+    if (/Mac/i.test(platform)) return 'macos';
+    if (/Linux/i.test(platform)) return 'linux';
+
+    return 'other';
+}
+
+function getBrowserType() {
+    const userAgent = window.navigator.userAgent || '';
+
+    if (/Firefox\//i.test(userAgent)) return 'firefox';
+    if (/Edg\//i.test(userAgent)) return 'edge';
+    if (/OPR\//i.test(userAgent) || /Opera\//i.test(userAgent)) return 'opera';
+    if (/Chrome\//i.test(userAgent) || /CriOS\//i.test(userAgent)) return 'chrome';
+    if (/Safari\//i.test(userAgent)) return 'safari';
+
+    return 'other';
 }
 
 function initNotificationReadLinks() {
