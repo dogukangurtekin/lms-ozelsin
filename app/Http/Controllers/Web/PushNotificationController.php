@@ -71,6 +71,13 @@ class PushNotificationController extends Controller
 
     public function subscribe(Request $request): JsonResponse
     {
+        if (! Schema::hasTable('push_subscriptions')) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Push abonelik tablosu henuz olusturulmamis.',
+            ], 503);
+        }
+
         $data = $request->validate([
             'endpoint' => ['required', 'url'],
             'keys.p256dh' => ['required', 'string'],
@@ -96,6 +103,13 @@ class PushNotificationController extends Controller
 
     public function unsubscribe(Request $request): JsonResponse
     {
+        if (! Schema::hasTable('push_subscriptions')) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Push abonelik tablosu henuz olusturulmamis.',
+            ], 503);
+        }
+
         $request->validate([
             'endpoint' => ['required', 'url'],
         ]);
