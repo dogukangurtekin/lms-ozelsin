@@ -168,6 +168,9 @@ function getAppBaseUrl() {
 function initPwaInstallControls() {
     const installButtons = document.querySelectorAll('[data-pwa-install]');
     const installStatus = document.querySelector('[data-pwa-install-status]');
+    const installDialog = document.getElementById('pwa-install-dialog');
+    const installDialogTitle = document.querySelector('[data-pwa-install-dialog-title]');
+    const installDialogBody = document.querySelector('[data-pwa-install-dialog-body]');
     const install = getInstallSupportDetails();
 
     if (!installButtons.length || !installStatus) {
@@ -207,11 +210,13 @@ function initPwaInstallControls() {
             try {
                 if (install.manualOnly) {
                     setStatus(install.message);
+                    showInstallHelpDialog(installDialog, installDialogTitle, installDialogBody, install);
                     return;
                 }
 
                 if (!window.deferredPwaPrompt) {
                     setStatus(install.message || 'Bu cihazda kurulum penceresi henuz hazir degil.', 'rose');
+                    showInstallHelpDialog(installDialog, installDialogTitle, installDialogBody, install);
                     return;
                 }
 
@@ -231,6 +236,35 @@ function initPwaInstallControls() {
             }
         });
     });
+}
+
+function showInstallHelpDialog(dialog, titleNode, bodyNode, install) {
+    if (!dialog || !titleNode || !bodyNode) {
+        return;
+    }
+
+    titleNode.textContent = install.title || 'Kurulum Yardimi';
+    bodyNode.innerHTML = '';
+
+    const intro = document.createElement('p');
+    intro.className = 'text-sm text-slate-600';
+    intro.textContent = install.message || 'Bu cihaz icin uygun kurulum adimlarini izleyin.';
+    bodyNode.appendChild(intro);
+
+    if (Array.isArray(install.steps) && install.steps.length) {
+        const list = document.createElement('ol');
+        list.className = 'mt-4 list-decimal space-y-2 pl-5 text-sm text-slate-700';
+
+        install.steps.forEach((step) => {
+            const item = document.createElement('li');
+            item.textContent = step;
+            list.appendChild(item);
+        });
+
+        bodyNode.appendChild(list);
+    }
+
+    dialog.showModal();
 }
 
 function isIosDevice() {
@@ -259,7 +293,15 @@ function getInstallSupportDetails() {
         return {
             isStandalone: false,
             manualOnly: true,
+            title: 'iPhone ve iPad Kurulumu',
             message: 'iPhone ve iPad kurulumu Paylas menusu ile yapilir. Safari, Chrome, Edge veya Firefox icinde Paylas > Ana Ekrana Ekle adimlarini kullanin.',
+            steps: [
+                'Siteyi iPhone veya iPad tarayicisinda acin.',
+                'Paylas dugmesine dokunun.',
+                'Ana Ekrana Ekle secenegini secin.',
+                'Kurulan simgeden uygulamayi acin.',
+                'Ardindan Bildirimleri Ac butonunu kullanin.',
+            ],
         };
     }
 
@@ -267,24 +309,80 @@ function getInstallSupportDetails() {
         return {
             isStandalone: false,
             manualOnly: true,
-            message: 'macOS Safari icinde uygulamayi kurmak icin Dosya > Dock’a Ekle secenegini kullanin.',
+            title: 'macOS Safari Kurulumu',
+            message: 'macOS Safari icinde uygulamayi kurmak icin Dosya > Docka Ekle secenegini kullanin.',
+            steps: [
+                'Siteyi Safari ile acin.',
+                'Ust menuden Dosya secenegine girin.',
+                'Docka Ekle secenegini secin.',
+                'Kurulan uygulamayi Docktan acin.',
+            ],
         };
     }
 
-    if (platform === 'windows' || platform === 'linux' || platform === 'android' || platform === 'macos') {
-        if (browser === 'firefox') {
-            return {
-                isStandalone: false,
-                manualOnly: true,
-                message: 'Firefox bildirimleri destekler ancak PWA kurulum penceresi sunmaz. Kurulum icin Chrome veya Edge kullanin.',
-            };
-        }
+    if ((platform === 'windows' || platform === 'linux' || platform === 'android' || platform === 'macos') && browser === 'firefox') {
+        return {
+            isStandalone: false,
+            manualOnly: true,
+            title: 'Firefox Kurulum Bilgisi',
+            message: 'Firefox bildirimleri destekler ancak PWA kurulum penceresi sunmaz. Kurulum icin Chrome veya Edge kullanin.',
+            steps: [
+                'Ayni siteyi Chrome veya Edge ile acin.',
+                'Adres cubugundaki kurulum simgesini veya tarayici menusundeki uygulama kur secenegini kullanin.',
+                'Kurulumdan sonra yeni uygulama kisayolunu acin.',
+            ],
+        };
+    }
+
+    if (platform === 'android') {
+        return {
+            isStandalone: false,
+            manualOnly: false,
+            title: 'Android Kurulumu',
+            message: 'Android tarayiciniz destekliyorsa bu buton kurulum penceresini acar.',
+            steps: [
+                'Butona dokunun ve gelen kurulum penceresini onaylayin.',
+                'Pencere acilmazsa tarayici menusunden Ana Ekrana Ekle veya Uygulamayi Yukle secenegini kullanin.',
+            ],
+        };
+    }
+
+    if (platform === 'windows' || platform === 'linux') {
+        return {
+            isStandalone: false,
+            manualOnly: false,
+            title: 'Windows ve Linux Kurulumu',
+            message: 'Chrome ve Edge bu butonla kurulum penceresi acabilir.',
+            steps: [
+                'Butona basin ve kurulum penceresini onaylayin.',
+                'Pencere acilmazsa adres cubugundaki kurulum simgesini kontrol edin.',
+                'Firefox kullaniyorsaniz kurulum icin Chrome veya Edge kullanin.',
+            ],
+        };
+    }
+
+    if (platform === 'macos') {
+        return {
+            isStandalone: false,
+            manualOnly: false,
+            title: 'macOS Kurulumu',
+            message: 'Chrome ve Edge bu butonla kurulum penceresi acabilir. Safari ise Dosya menusu ile kurulum yapar.',
+            steps: [
+                'Chrome veya Edge kullaniyorsaniz butona basin ve kurulum penceresini onaylayin.',
+                'Safari kullaniyorsaniz Dosya > Docka Ekle yolunu kullanin.',
+            ],
+        };
     }
 
     return {
         isStandalone: false,
         manualOnly: false,
+        title: 'Kurulum Yardimi',
         message: 'Bu cihazda otomatik kurulum penceresi henuz hazir degil.',
+        steps: [
+            'Siteyi destekli bir tarayicida acin.',
+            'Tarayici menusu veya adres cubugundaki kurulum secenegini kullanin.',
+        ],
     };
 }
 
