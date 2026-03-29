@@ -16,7 +16,7 @@
         })->values();
     @endphp
 
-    <div class="space-y-6">
+    <div class="space-y-6 overflow-x-hidden">
         @if(session('success'))
             <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                 {{ session('success') }}
@@ -33,14 +33,14 @@
             </div>
         @endif
 
-        <section class="grid gap-6 {{ auth()->user()?->hasRole('admin') ? 'lg:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]' : '' }}">
+        <section class="grid gap-6 overflow-x-hidden {{ auth()->user()?->hasRole('admin') ? 'lg:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]' : '' }}">
             <article class="lms-panel">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                         <h3 class="text-lg font-semibold text-slate-900">PWA ve Push Bildirimleri</h3>
                         <p class="mt-1 text-sm text-slate-600">Bu cihaz icin push izni verip size gonderilebilecek bildirim turlerini yonetebilirsiniz.</p>
                     </div>
-                    <div class="flex flex-wrap gap-2">
+                    <div class="flex flex-wrap gap-2 max-sm:grid max-sm:grid-cols-2">
                         <button type="button" data-pwa-install class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
                             Uygulamayi Kur
                         </button>
@@ -123,7 +123,7 @@
         </section>
 
         @if(auth()->user()?->hasRole('admin'))
-            <section class="lms-panel">
+        <section class="lms-panel overflow-x-hidden">
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h3 class="lms-panel-title">Bildirim Gecmisi</h3>
@@ -240,8 +240,8 @@
         @endif
     </div>
 
-    <dialog id="notification-settings-dialog" class="backdrop:bg-slate-900/50 w-full max-w-2xl rounded-2xl border border-slate-200 p-0">
-        <form method="dialog" class="border-b border-slate-200 px-6 py-4">
+    <dialog id="notification-settings-dialog" class="backdrop:bg-slate-900/50 w-[calc(100vw-1.5rem)] max-w-2xl rounded-2xl border border-slate-200 p-0 max-sm:mx-auto">
+        <form method="dialog" class="border-b border-slate-200 px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between gap-4">
                 <div>
                     <h3 class="text-lg font-semibold text-slate-900">Bildirim Ayarlari</h3>
@@ -253,11 +253,11 @@
             </div>
         </form>
 
-        <form method="POST" action="{{ route('notifications.preferences.update') }}" class="px-6 py-5">
+        <form method="POST" action="{{ route('notifications.preferences.update') }}" class="px-4 py-5 sm:px-6">
             @csrf
             <div class="space-y-4">
                 @foreach($resolvedPreferences as $preference)
-                    <label class="flex items-start justify-between gap-4 rounded-xl border border-slate-200 px-4 py-4">
+                    <label class="flex items-start justify-between gap-4 rounded-xl border border-slate-200 px-4 py-4 max-sm:flex-col">
                         <div>
                             <div class="font-medium text-slate-900">{{ $preference['label'] }}</div>
                             <p class="mt-1 text-sm text-slate-500">{{ $preference['description'] }}</p>
@@ -265,7 +265,7 @@
                                 <p class="mt-2 text-xs font-semibold text-slate-400">Bu bildirim zorunludur ve kapatilamaz.</p>
                             @endif
                         </div>
-                        <div class="pt-1">
+                        <div class="pt-1 max-sm:self-end">
                             <input
                                 type="checkbox"
                                 name="preferences[{{ $preference['type'] }}]"
@@ -279,7 +279,7 @@
                 @endforeach
             </div>
 
-            <div class="mt-6 flex items-center justify-end gap-3">
+            <div class="mt-6 flex items-center justify-end gap-3 max-sm:flex-col-reverse max-sm:items-stretch">
                 <button type="button" onclick="document.getElementById('notification-settings-dialog').close()" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                     Vazgec
                 </button>

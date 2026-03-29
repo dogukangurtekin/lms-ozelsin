@@ -7,12 +7,14 @@
         -webkit-text-size-adjust: 100%;
         overflow-x: hidden;
         overflow-x: clip;
+        touch-action: manipulation;
     }
 
     body {
         overflow-x: hidden;
         overflow-x: clip;
         font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+        overscroll-behavior-x: none;
     }
 
     input,
@@ -190,6 +192,10 @@ main .overflow-x-auto {
     max-width: 100%;
 }
 
+dialog {
+    max-width: min(42rem, calc(100vw - 1.5rem));
+}
+
 @media (max-width: 480px) {
     .lms-auth-card {
         border-radius: 1rem;
@@ -210,6 +216,22 @@ main .overflow-x-auto {
     main {
         padding-left: 0.75rem !important;
         padding-right: 0.75rem !important;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+        font-size: 16px !important;
+    }
+
+    .lms-header-notification-menu {
+        position: fixed !important;
+        top: 4.5rem !important;
+        left: 0.75rem !important;
+        right: 0.75rem !important;
+        width: auto !important;
+        max-width: none !important;
     }
 }
 
@@ -253,6 +275,11 @@ main .overflow-x-auto {
         padding: 0.3rem 0;
         border: 0 !important;
         text-align: left !important;
+    }
+
+    dialog {
+        margin: auto;
+        width: calc(100vw - 1.5rem);
     }
 }
 
