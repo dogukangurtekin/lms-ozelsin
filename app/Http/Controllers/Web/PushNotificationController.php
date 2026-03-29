@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\NotificationLog;
 use App\Models\NotificationLogRead;
 use App\Models\NotificationPreference;
+use App\Models\PushDeviceStatus;
 use App\Models\PushSubscription as PushSubscriptionModel;
 use App\Services\PushNotificationService;
 use Illuminate\Http\JsonResponse;
@@ -29,6 +30,7 @@ class PushNotificationController extends Controller
         $isAdmin = $user->hasRole('admin');
         $notificationPreferenceDefinitions = $this->preferenceDefinitionsFor($user);
         $userNotificationPreferences = collect();
+        $deviceStatuses = collect();
 
         if (Schema::hasTable('push_subscriptions')) {
             $pushSubscriptionCount = PushSubscriptionModel::query()
@@ -41,6 +43,13 @@ class PushNotificationController extends Controller
                 ->where('user_id', $user->id)
                 ->whereIn('notification_type', array_keys($notificationPreferenceDefinitions))
                 ->pluck('is_enabled', 'notification_type');
+        }
+
+        if (Schema::hasTable('push_device_statuses')) {
+            $deviceStatuses = PushDeviceStatus::query()
+                ->where('user_id', $user->id)
+                ->latest('last_seen_at')
+                ->get();
         }
 
         $statusFilter = (string) $request->input('status', '');
@@ -79,6 +88,7 @@ class PushNotificationController extends Controller
             'statusFilter',
             'search',
             'failedOnly',
+            'deviceStatuses',
             'notificationPreferenceDefinitions',
             'userNotificationPreferences'
         ));
@@ -187,6 +197,48 @@ class PushNotificationController extends Controller
         return response()->json([
             'ok' => true,
             'publicKey' => $publicKey,
+        ]);
+    }
+
+    public function deviceStatus(Request $request): JsonResponse
+    {
+        if (! Schema::hasTable('push_device_statuses')) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Cihaz durum tablosu henuz olusturulmamis.',
+            ], 503);
+        }
+
+        $data = $request->validate([
+            'device_key' => ['required', 'string', 'max:120'],
+            'device_label' => ['nullable', 'string', 'max:160'],
+            'platform' => ['nullable', 'string', 'max:40'],
+            'browser' => ['nullable', 'string', 'max:40'],
+            'user_agent' => ['nullable', 'string', 'max:2000'],
+            'permission_state' => ['required', 'in:default,granted,denied'],
+            'subscription_endpoint' => ['nullable', 'url'],
+            'is_standalone' => ['nullable', 'boolean'],
+        ]);
+
+        PushDeviceStatus::query()->updateOrCreate(
+            [
+                'user_id' => $request->user()->id,
+                'device_key' => $data['device_key'],
+            ],
+            [
+                'device_label' => $data['device_label'] ?? null,
+                'platform' => $data['platform'] ?? null,
+                'browser' => $data['browser'] ?? null,
+                'user_agent' => $data['user_agent'] ?? null,
+                'permission_state' => $data['permission_state'],
+                'subscription_endpoint' => $data['subscription_endpoint'] ?? null,
+                'is_standalone' => (bool) ($data['is_standalone'] ?? false),
+                'last_seen_at' => now(),
+            ]
+        );
+
+        return response()->json([
+            'ok' => true,
         ]);
     }
 

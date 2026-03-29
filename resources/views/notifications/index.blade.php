@@ -53,6 +53,9 @@
                         <button type="button" onclick="document.getElementById('notification-settings-dialog').showModal()" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                             Bildirim Ayarlari
                         </button>
+                        <button type="button" onclick="document.getElementById('push-devices-dialog').showModal()" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                            Izin Veren Cihazlar
+                        </button>
                     </div>
                 </div>
 
@@ -60,6 +63,15 @@
                     <div class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
                         <div class="text-xs uppercase tracking-wide text-slate-400">Cihaz Durumu</div>
                         <div class="mt-1 font-semibold" data-push-count data-count="{{ $pushSubscriptionCount }}">{{ $pushSubscriptionCount > 0 ? $pushSubscriptionCount.' cihaz bagli' : 'Bagli cihaz yok' }}</div>
+                        <div class="mt-3 flex items-center gap-2">
+                            <span class="text-xs uppercase tracking-wide text-slate-400">Anlik Durum</span>
+                            <span
+                                data-push-live-state
+                                class="inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600"
+                            >
+                                Kontrol ediliyor
+                            </span>
+                        </div>
                     </div>
                     <div data-push-status class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
                         Bildirimleri acarak odev, gorusme ve sistem duyurularini anlik alabilirsiniz.
@@ -292,6 +304,61 @@
                 </button>
             </div>
         </form>
+    </dialog>
+
+    <dialog id="push-devices-dialog" class="backdrop:bg-slate-900/50 w-[calc(100vw-1.5rem)] max-w-3xl rounded-2xl border border-slate-200 p-0 max-sm:mx-auto">
+        <form method="dialog" class="border-b border-slate-200 px-4 py-4 sm:px-6">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900">Push Cihazlari</h3>
+                    <p class="mt-1 text-sm text-slate-500">Sadece bu hesaba girip durumunu bildiren cihazlar listelenir.</p>
+                </div>
+                <button type="submit" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    Kapat
+                </button>
+            </div>
+        </form>
+
+        <div class="max-h-[75vh] overflow-y-auto px-4 py-5 sm:px-6">
+            <div class="mb-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+                Tarayici guvenligi nedeniyle sadece sisteme ugrayip durumunu paylasan cihazlari gorebiliriz. Hic giris yapmayan veya hic durum bildirmeyen cihazlar listelenmez.
+            </div>
+
+            <div class="space-y-3">
+                @forelse($deviceStatuses as $device)
+                    @php
+                        $isEnabled = $device->permission_state === 'granted' && filled($device->subscription_endpoint);
+                    @endphp
+                    <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <h4 class="text-sm font-semibold text-slate-900">{{ $device->device_label ?: 'Bilinmeyen cihaz' }}</h4>
+                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $isEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700' }}">
+                                        {{ $isEnabled ? 'Acik' : 'Kapali' }}
+                                    </span>
+                                </div>
+                                <div class="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-2">
+                                    <div>Platform: {{ $device->platform ?: '-' }}</div>
+                                    <div>Tarayici: {{ $device->browser ?: '-' }}</div>
+                                    <div>Calisma: {{ $device->is_standalone ? 'PWA uygulama' : 'Tarayici sekmesi' }}</div>
+                                    <div>Son gorulme: {{ optional($device->last_seen_at)->format('d.m.Y H:i') ?: '-' }}</div>
+                                </div>
+                                @if($device->user_agent)
+                                    <div class="mt-3 break-words rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                                        {{ $device->user_agent }}
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </article>
+                @empty
+                    <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-600">
+                        Henuz cihaz bilgisi yok. Liste, bu hesaba giren cihazlar bildirimler sayfasinda durum gonderdikce dolacaktir.
+                    </div>
+                @endforelse
+            </div>
+        </div>
     </dialog>
 
     <dialog id="pwa-install-dialog" class="backdrop:bg-slate-900/50 w-[calc(100vw-1.5rem)] max-w-lg rounded-2xl border border-slate-200 p-0 max-sm:mx-auto">

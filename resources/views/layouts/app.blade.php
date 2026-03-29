@@ -15,6 +15,15 @@
     <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <script>
+        (() => {
+            const storedTheme = window.localStorage.getItem('lms_theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if ((storedTheme || (prefersDark ? 'dark' : 'light')) === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         @media (max-width: 1024px) {
@@ -31,7 +40,12 @@
         }
     </style>
 </head>
-<body class="font-sans antialiased overflow-hidden" data-app-base-url="{{ url('/') }}">
+<body
+    class="font-sans antialiased overflow-hidden"
+    data-app-base-url="{{ url('/') }}"
+    data-auth-user-id="{{ auth()->id() }}"
+    data-push-prompt-on-login="{{ session('showPushPrompt') ? '1' : '0' }}"
+>
     @php
         $headerNotifications = collect();
         $headerNotificationCount = 0;
@@ -94,6 +108,17 @@
                     </div>
 
                     <div class="flex items-center gap-2 shrink-0 ml-3">
+                        <button
+                            type="button"
+                            class="lms-theme-toggle"
+                            data-theme-toggle
+                            aria-label="Tema degistir"
+                            aria-pressed="false"
+                        >
+                            <span class="lms-theme-toggle-icon" data-theme-toggle-icon></span>
+                            <span class="lms-theme-toggle-label" data-theme-toggle-label>Light</span>
+                        </button>
+
                         <div class="relative" x-data="{ notificationMenuOpen: false }">
                             <button
                                 type="button"
@@ -208,6 +233,76 @@
             >
                 @include('layouts.navigation')
             </aside>
+        </div>
+
+        <div
+            data-push-prompt-modal
+            class="fixed inset-0 z-[70] hidden items-center justify-center bg-slate-950/35 px-4 backdrop-blur-[2px]"
+            aria-hidden="true"
+        >
+            <div class="relative w-full max-w-xl rounded-[1.75rem] bg-white px-5 py-5 shadow-2xl sm:px-8 sm:py-7">
+                <button
+                    type="button"
+                    data-push-prompt-close
+                    class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                    aria-label="Kapat"
+                >
+                    <svg viewBox="0 0 24 24" class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                </button>
+
+                <div class="flex items-center gap-3 pr-10">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-sky-600">
+                        <svg viewBox="0 0 24 24" class="h-6 w-6" fill="currentColor" aria-hidden="true">
+                            <path d="M12 2a6 6 0 0 0-6 6v3.764l-1.447 2.894A1 1 0 0 0 5.447 16h13.106a1 1 0 0 0 .894-1.447L18 11.764V8a6 6 0 0 0-6-6Zm0 20a3 3 0 0 0 2.816-2H9.184A3 3 0 0 0 12 22Z" />
+                        </svg>
+                    </div>
+                    <div class="text-[2rem] font-semibold tracking-tight text-slate-800 sm:text-[2.15rem]">Push Bildirimleri</div>
+                </div>
+
+                <div class="mt-6 max-w-xl space-y-4">
+                    <p class="text-base leading-8 text-slate-700 sm:text-[1.7rem] sm:leading-[2.7rem]">
+                        Onay talepleri, yönetici mesajları ve sistem uyarılarını anlık almak için tarayıcı bildirimi izni verebilirsiniz.
+                    </p>
+                    <p class="text-sm leading-7 text-slate-500 sm:text-[1.35rem] sm:leading-[2.25rem]">
+                        İzin verirseniz bu cihaz ve tarayıcı için abonelik oluşturulur. Daha sonra kullanıcı menüsünden test bildirimi de gönderebilirsiniz.
+                    </p>
+                    <div
+                        data-push-prompt-status
+                        class="hidden rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600"
+                    ></div>
+                </div>
+
+                <label class="mt-7 inline-flex items-center gap-3 text-base text-slate-700 sm:text-[1.35rem]">
+                    <input
+                        type="checkbox"
+                        data-push-prompt-never
+                        class="h-5 w-5 rounded-md border-slate-300 text-sky-600 focus:ring-sky-500"
+                    >
+                    <span>Bir daha hatırlatma</span>
+                </label>
+
+                <div class="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+                    <button
+                        type="button"
+                        data-push-prompt-later
+                        class="inline-flex items-center justify-center rounded-2xl bg-slate-100 px-5 py-2.5 text-base font-medium text-slate-700 transition hover:bg-slate-200"
+                    >
+                        Şimdi Değil
+                    </button>
+                    <button
+                        type="button"
+                        data-push-prompt-allow
+                        class="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-2.5 text-base font-semibold text-white transition hover:bg-blue-700"
+                    >
+                        <svg viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="currentColor" aria-hidden="true">
+                            <path d="M12 2a6 6 0 0 0-6 6v3.764l-1.447 2.894A1 1 0 0 0 5.447 16h13.106a1 1 0 0 0 .894-1.447L18 11.764V8a6 6 0 0 0-6-6Zm0 20a3 3 0 0 0 2.816-2H9.184A3 3 0 0 0 12 22Z" />
+                        </svg>
+                        İzin Ver
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </body>

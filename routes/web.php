@@ -26,6 +26,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/app-notifications/preferences', [PushNotificationController::class, 'updatePreferences'])->name('notifications.preferences.update')->middleware('module:dashboard');
     Route::post('/app-notifications/{notificationLog}/read', [PushNotificationController::class, 'markAsRead'])->name('notifications.read')->middleware('module:dashboard');
     Route::get('/webpush/public-key', [PushNotificationController::class, 'publicKey'])->name('push.public-key');
+    Route::post('/webpush/device-status', [PushNotificationController::class, 'deviceStatus'])->name('push.device-status');
     Route::post('/webpush/subscribe', [PushNotificationController::class, 'subscribe'])->name('push.subscribe');
     Route::delete('/webpush/unsubscribe', [PushNotificationController::class, 'unsubscribe'])->name('push.unsubscribe');
     Route::post('/webpush/send', [PushNotificationController::class, 'send'])->name('push.send')->middleware('role:admin')->middleware('module:dashboard');

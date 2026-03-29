@@ -3,6 +3,46 @@
 @tailwind utilities;
 
 @layer base {
+    :root {
+        color-scheme: light;
+        --lms-bg-main: radial-gradient(circle at top right, #dbeafe 0%, #eff6ff 30%, #f8fafc 70%);
+        --lms-bg-auth: linear-gradient(135deg, #e0f2fe 0%, #f8fafc 35%, #ecfeff 100%);
+        --lms-auth-side-bg: linear-gradient(160deg, #0f172a 0%, #0f766e 80%);
+        --lms-surface: rgba(255, 255, 255, 0.92);
+        --lms-surface-strong: #ffffff;
+        --lms-surface-muted: #f8fafc;
+        --lms-border: #cbd5e1;
+        --lms-border-soft: #e2e8f0;
+        --lms-text: #0f172a;
+        --lms-text-soft: #475569;
+        --lms-text-muted: #64748b;
+        --lms-hover: rgba(148, 163, 184, 0.14);
+        --lms-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+        --lms-input-bg: #ffffff;
+        --lms-header-button-bg: #ffffff;
+        --lms-header-button-text: #334155;
+    }
+
+    html.dark {
+        color-scheme: dark;
+        --lms-bg-main: radial-gradient(circle at top right, #1e293b 0%, #0f172a 45%, #020617 100%);
+        --lms-bg-auth: linear-gradient(135deg, #020617 0%, #0f172a 38%, #111827 100%);
+        --lms-auth-side-bg: linear-gradient(160deg, #020617 0%, #0f766e 115%);
+        --lms-surface: rgba(15, 23, 42, 0.9);
+        --lms-surface-strong: #0f172a;
+        --lms-surface-muted: #111827;
+        --lms-border: #334155;
+        --lms-border-soft: #1e293b;
+        --lms-text: #e2e8f0;
+        --lms-text-soft: #cbd5e1;
+        --lms-text-muted: #94a3b8;
+        --lms-hover: rgba(51, 65, 85, 0.55);
+        --lms-shadow: 0 22px 50px rgba(2, 6, 23, 0.45);
+        --lms-input-bg: #0b1120;
+        --lms-header-button-bg: #111827;
+        --lms-header-button-text: #e2e8f0;
+    }
+
     html {
         -webkit-text-size-adjust: 100%;
         overflow-x: hidden;
@@ -15,6 +55,9 @@
         overflow-x: clip;
         font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
         overscroll-behavior-x: none;
+        background: var(--lms-bg-main);
+        color: var(--lms-text);
+        transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
     }
 
     input,
@@ -76,56 +119,81 @@
         margin: 0;
         display: flex;
         align-items: center;
-        border-bottom: 1px solid #e2e8f0;
+        border-bottom: 1px solid var(--lms-border-soft);
         flex-shrink: 0;
     }
 
     .lms-bg-auth {
-        background: linear-gradient(135deg, #e0f2fe 0%, #f8fafc 35%, #ecfeff 100%);
+        background: var(--lms-bg-auth);
     }
 
     .lms-auth-side {
-        background: linear-gradient(160deg, #0f172a 0%, #0f766e 80%);
+        background: var(--lms-auth-side-bg);
     }
 
     .lms-auth-card {
-        @apply rounded-2xl bg-white border border-slate-200 p-6 sm:p-8 shadow-xl;
+        @apply rounded-2xl border p-6 sm:p-8 shadow-xl;
+        background: var(--lms-surface-strong);
+        border-color: var(--lms-border-soft);
+        box-shadow: var(--lms-shadow);
     }
 
     .lms-bg {
-        background: radial-gradient(circle at top right, #dbeafe 0%, #eff6ff 30%, #f8fafc 70%);
+        background: var(--lms-bg-main);
     }
 
     .lms-nav-link {
-        @apply block rounded-lg px-3 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition;
+        @apply block rounded-lg px-3 py-2 transition;
+        color: var(--lms-text-soft);
+    }
+
+    .lms-nav-link:hover {
+        background: var(--lms-hover);
+        color: var(--lms-text);
     }
 
     .lms-nav-link.active {
-        @apply bg-slate-900 text-white hover:bg-slate-900 hover:text-white;
+        @apply text-white;
+        background: linear-gradient(135deg, #2563eb 0%, #0891b2 100%);
     }
 
     .lms-stat-card {
-        @apply rounded-xl bg-white border border-slate-200 p-4 shadow-sm;
+        @apply rounded-xl border p-4 shadow-sm;
+        background: var(--lms-surface);
+        border-color: var(--lms-border-soft);
+        box-shadow: var(--lms-shadow);
     }
 
     .lms-stat-card p {
-        @apply text-xs uppercase tracking-wide text-slate-500;
+        @apply text-xs uppercase tracking-wide;
+        color: var(--lms-text-muted);
     }
 
     .lms-stat-card h3 {
-        @apply text-2xl font-bold text-slate-900 mt-1;
+        @apply mt-1 text-2xl font-bold;
+        color: var(--lms-text);
     }
 
     .lms-panel {
-        @apply rounded-xl bg-white border border-slate-200 p-5 shadow-sm;
+        @apply rounded-xl border p-5 shadow-sm;
+        background: var(--lms-surface);
+        border-color: var(--lms-border-soft);
+        box-shadow: var(--lms-shadow);
     }
 
     .lms-panel-title {
-        @apply text-base font-semibold text-slate-900;
+        @apply text-base font-semibold;
+        color: var(--lms-text);
     }
 
     .lms-quick-link {
-        @apply rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50 transition;
+        @apply rounded-lg border px-3 py-2 transition;
+        background: color-mix(in srgb, var(--lms-surface-strong) 88%, transparent);
+        border-color: var(--lms-border-soft);
+    }
+
+    .lms-quick-link:hover {
+        background: var(--lms-hover);
     }
 
     .lms-table {
@@ -133,7 +201,9 @@
     }
 
     .lms-table thead tr {
-        @apply border-b border-slate-200 text-left text-slate-500;
+        @apply border-b text-left;
+        border-color: var(--lms-border-soft);
+        color: var(--lms-text-muted);
     }
 
     .lms-table th,
@@ -142,13 +212,126 @@
     }
 
     .lms-table tbody tr {
-        @apply border-b border-slate-100;
+        border-bottom: 1px solid var(--lms-border-soft);
     }
 
     .mobile-table-wrap {
         @apply w-full overflow-x-auto;
         -webkit-overflow-scrolling: touch;
     }
+}
+
+.lms-theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    min-height: 2.6rem;
+    padding: 0;
+    border-radius: 9999px;
+    border: 1px solid var(--lms-border);
+    background: var(--lms-header-button-bg);
+    color: var(--lms-header-button-text);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+    transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.lms-theme-toggle:hover {
+    background: var(--lms-hover);
+}
+
+.lms-theme-toggle:active {
+    transform: translateY(1px);
+}
+
+.lms-theme-toggle-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 9999px;
+    background: transparent;
+    color: currentColor;
+    flex-shrink: 0;
+}
+
+.lms-theme-toggle-label {
+    display: none;
+}
+
+html.dark .lms-page-title,
+html.dark .lms-page-title *,
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark .text-slate-700,
+html.dark .text-gray-700 {
+    color: var(--lms-text) !important;
+}
+
+html.dark .text-slate-600,
+html.dark .text-slate-500,
+html.dark .text-slate-400,
+html.dark .text-gray-600,
+html.dark .text-gray-500 {
+    color: var(--lms-text-muted) !important;
+}
+
+html.dark .bg-white,
+html.dark .bg-white\/90,
+html.dark .bg-slate-50,
+html.dark .bg-slate-50\/60,
+html.dark .bg-sky-50\/70,
+html.dark .bg-gray-50 {
+    background-color: var(--lms-surface-strong) !important;
+}
+
+html.dark .border-slate-300,
+html.dark .border-slate-200,
+html.dark .border-slate-100,
+html.dark .border-gray-300,
+html.dark .border-gray-200 {
+    border-color: var(--lms-border-soft) !important;
+}
+
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-100:hover,
+html.dark .hover\:bg-rose-50:hover {
+    background-color: var(--lms-hover) !important;
+}
+
+html.dark .shadow,
+html.dark .shadow-sm,
+html.dark .shadow-lg,
+html.dark .shadow-xl,
+html.dark .shadow-2xl {
+    box-shadow: var(--lms-shadow) !important;
+}
+
+html.dark input:not([type='checkbox']):not([type='radio']):not([type='range']),
+html.dark select,
+html.dark textarea,
+html.dark dialog,
+html.dark .bg-white.rounded-xl,
+html.dark .bg-white.rounded-2xl,
+html.dark .bg-white.rounded-lg,
+html.dark .bg-white.overflow-hidden {
+    background-color: var(--lms-surface-strong) !important;
+    color: var(--lms-text) !important;
+    border-color: var(--lms-border-soft) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+    color: #64748b;
+}
+
+html.dark .stack-list-mobile tr {
+    border-color: var(--lms-border-soft);
+    background: var(--lms-surface-strong);
 }
 
 /* Mobile-first defaults (320px+) */

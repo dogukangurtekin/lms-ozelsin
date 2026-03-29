@@ -12,11 +12,33 @@
     <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <script>
+        (() => {
+            const storedTheme = window.localStorage.getItem('lms_theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if ((storedTheme || (prefersDark ? 'dark' : 'light')) === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="font-sans antialiased lms-bg-auth">
+    <div class="fixed right-4 top-4 z-50">
+        <button
+            type="button"
+            class="lms-theme-toggle"
+            data-theme-toggle
+            aria-label="Tema degistir"
+            aria-pressed="false"
+        >
+            <span class="lms-theme-toggle-icon" data-theme-toggle-icon></span>
+            <span class="lms-theme-toggle-label" data-theme-toggle-label>Light</span>
+        </button>
+    </div>
+
     <div class="min-h-screen grid lg:grid-cols-2">
-        <section class="hidden lg:flex flex-col justify-between p-12 text-white lms-auth-side" style="background: linear-gradient(160deg, #2f4f75 0%, #2aa39a 80%);">
+        <section class="hidden lg:flex flex-col justify-between p-12 text-white lms-auth-side">
             <div class="flex-1 flex flex-col items-center justify-center text-center gap-4">
                 <img src="{{ asset('assets/logo.png') }}" alt="Özelsin Eğitim Platformu Logosu" class="object-contain mx-auto" style="width:200px;height:200px;">
                 <div>

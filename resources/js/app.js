@@ -4,10 +4,12 @@ import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
 window.deferredPwaPrompt = null;
+const THEME_STORAGE_KEY = 'lms_theme';
 
 Alpine.start();
 
 document.addEventListener('DOMContentLoaded', () => {
+    initThemeToggle();
     document.querySelectorAll('main table').forEach((table) => {
         const parent = table.parentElement;
         if (!parent) return;
@@ -22,9 +24,62 @@ document.addEventListener('DOMContentLoaded', () => {
 
     registerServiceWorker();
     initPushControls();
+    initPushPromptModal();
     initPwaInstallControls();
     initNotificationReadLinks();
 });
+
+function initThemeToggle() {
+    const root = document.documentElement;
+    const toggles = document.querySelectorAll('[data-theme-toggle]');
+    const storageTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    const systemPrefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+    const initialTheme = storageTheme || (systemPrefersDark ? 'dark' : 'light');
+
+    const syncMetaThemeColor = (theme) => {
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+
+        if (metaTheme) {
+            metaTheme.setAttribute('content', theme === 'dark' ? '#020617' : '#0f172a');
+        }
+    };
+
+    const applyTheme = (theme) => {
+        root.classList.toggle('dark', theme === 'dark');
+        root.dataset.theme = theme;
+        syncMetaThemeColor(theme);
+
+        toggles.forEach((toggle) => {
+            const label = toggle.querySelector('[data-theme-toggle-label]');
+            const icon = toggle.querySelector('[data-theme-toggle-icon]');
+            const pressed = theme === 'dark';
+
+            toggle.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+            toggle.setAttribute('title', pressed ? 'Aydinlik temaya gec' : 'Koyu temaya gec');
+            toggle.setAttribute('aria-label', pressed ? 'Aydinlik temaya gec' : 'Koyu temaya gec');
+
+            if (label) {
+                label.textContent = pressed ? 'Dark' : 'Light';
+            }
+
+            if (icon) {
+                icon.innerHTML = pressed
+                    ? '<svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M12 3a1 1 0 0 1 1 1v1.2a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1Zm0 14.8a1 1 0 0 1 1 1V20a1 1 0 1 1-2 0v-1.2a1 1 0 0 1 1-1Zm8-5.8a1 1 0 0 1 1 1 1 1 0 0 1-1 1h-1.2a1 1 0 1 1 0-2H20ZM5.2 12a1 1 0 1 1 0 2H4a1 1 0 1 1 0-2h1.2Zm11.75-5.95a1 1 0 0 1 1.41 1.41l-.85.85a1 1 0 0 1-1.41-1.41l.85-.85Zm-9.1 9.1a1 1 0 0 1 1.41 1.41l-.85.85A1 1 0 0 1 7 15.99l.85-.84Zm9.1 2.26a1 1 0 0 1-1.41 0l-.85-.85a1 1 0 1 1 1.41-1.41l.85.85a1 1 0 0 1 0 1.41ZM8.7 8.7a1 1 0 0 1-1.41 0l-.85-.85a1 1 0 1 1 1.41-1.41l.85.85A1 1 0 0 1 8.7 8.7ZM12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"/></svg>'
+                    : '<svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M20.742 13.045A8 8 0 0 1 10.955 3.258a1 1 0 0 0-1.31-1.247A10 10 0 1 0 22 14.355a1 1 0 0 0-1.258-1.31Z"/></svg>';
+            }
+        });
+    };
+
+    applyTheme(initialTheme);
+
+    toggles.forEach((toggle) => {
+        toggle.addEventListener('click', () => {
+            const nextTheme = root.classList.contains('dark') ? 'light' : 'dark';
+            window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+            applyTheme(nextTheme);
+        });
+    });
+}
 
 window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
@@ -56,6 +111,7 @@ function initPushControls() {
     const disableButton = document.querySelector('[data-push-disable]');
     const statusBox = document.querySelector('[data-push-status]');
     const countBox = document.querySelector('[data-push-count]');
+    const liveStateBox = document.querySelector('[data-push-live-state]');
     const baseUrl = getAppBaseUrl();
     const support = getPushSupportDetails();
 
@@ -81,38 +137,77 @@ function initPushControls() {
         }
     };
 
+    const setLiveState = (label, tone = 'slate') => {
+        if (!liveStateBox) {
+            return;
+        }
+
+        liveStateBox.textContent = label;
+        liveStateBox.className = `inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${
+            tone === 'green'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : tone === 'rose'
+                    ? 'border-rose-200 bg-rose-50 text-rose-700'
+                    : 'border-slate-200 bg-slate-100 text-slate-600'
+        }`;
+    };
+
+    const syncDeviceStatus = async () => {
+        const payload = await buildPushDeviceStatusPayload();
+
+        if (!payload) {
+            return;
+        }
+
+        try {
+            await window.axios.post(`${baseUrl}/webpush/device-status`, payload);
+        } catch (error) {
+            // Device inventory sync is best-effort.
+        }
+    };
+
+    const syncCurrentPushState = async () => {
+        if (!('Notification' in window)) {
+            setLiveState('Desteklenmiyor', 'rose');
+            return;
+        }
+
+        if (Notification.permission === 'denied') {
+            setLiveState('Tarayicida engelli', 'rose');
+            return;
+        }
+
+        if (!('serviceWorker' in navigator)) {
+            setLiveState('Desteklenmiyor', 'rose');
+            return;
+        }
+
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+
+            if (subscription) {
+                setLiveState('Acik', 'green');
+                if (countBox) {
+                    countBox.dataset.count = '1';
+                    countBox.textContent = '1 cihaz bagli';
+                }
+                await syncDeviceStatus();
+                return;
+            }
+
+            setLiveState('Kapali');
+            await syncDeviceStatus();
+        } catch (error) {
+            setLiveState('Kontrol edilemedi', 'rose');
+        }
+    };
+
     enableButton.addEventListener('click', async () => {
         setBusy(true);
 
         try {
-            if (!support.canSubscribe) {
-                throw new Error(support.message);
-            }
-
-            const permission = await Notification.requestPermission();
-            if (permission !== 'granted') {
-                throw new Error('Bildirim izni verilmedi.');
-            }
-
-            const registration = await navigator.serviceWorker.ready;
-            const publicKeyResponse = await window.axios.get(`${baseUrl}/webpush/public-key`);
-            const publicKey = publicKeyResponse.data.publicKey;
-            const existingSubscription = await registration.pushManager.getSubscription();
-
-            if (existingSubscription) {
-                await existingSubscription.unsubscribe();
-            }
-
-            const subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(publicKey),
-            });
-
-            await window.axios.post(`${baseUrl}/webpush/subscribe`, {
-                endpoint: subscription.endpoint,
-                keys: subscription.toJSON().keys,
-                contentEncoding: 'aes128gcm',
-            });
+            await enablePushForCurrentDevice();
 
             if (countBox) {
                 countBox.dataset.count = '1';
@@ -120,9 +215,12 @@ function initPushControls() {
             }
 
             setStatus('Bu cihaz icin push bildirimi aktif.', 'green');
+            setLiveState('Acik', 'green');
+            await syncDeviceStatus();
         } catch (error) {
             const message = error?.response?.data?.message || error?.message || 'Bildirim acilamadi.';
             setStatus(message, 'rose');
+            await syncCurrentPushState();
         } finally {
             setBusy(false);
         }
@@ -152,17 +250,248 @@ function initPushControls() {
             }
 
             setStatus('Bu cihaz icin push bildirimi kapatildi.');
+            setLiveState('Kapali');
+            await syncDeviceStatus();
         } catch (error) {
             const message = error?.response?.data?.message || error?.message || 'Bildirim kapatilamadi.';
             setStatus(message, 'rose');
+            await syncCurrentPushState();
         } finally {
             setBusy(false);
         }
     });
+
+    syncCurrentPushState();
+}
+
+function initPushPromptModal() {
+    const modal = document.querySelector('[data-push-prompt-modal]');
+    const allowButton = document.querySelector('[data-push-prompt-allow]');
+    const closeButton = document.querySelector('[data-push-prompt-close]');
+    const laterButton = document.querySelector('[data-push-prompt-later]');
+    const neverInput = document.querySelector('[data-push-prompt-never]');
+    const statusBox = document.querySelector('[data-push-prompt-status]');
+    const body = document.body;
+
+    if (!modal || !allowButton || !laterButton || !closeButton || !neverInput || !statusBox || !body) {
+        return;
+    }
+
+    const shouldPromptOnLogin = body.dataset.pushPromptOnLogin === '1';
+    const userId = body.dataset.authUserId || 'guest';
+    const neverKey = `push_prompt_never_${userId}`;
+
+    if (!shouldPromptOnLogin || window.localStorage.getItem(neverKey) === '1') {
+        return;
+    }
+
+    const support = getPushSupportDetails();
+    const setStatus = (message, tone = 'slate') => {
+        if (!message) {
+            statusBox.textContent = '';
+            statusBox.className = 'hidden rounded-2xl border px-4 py-3 text-sm';
+            return;
+        }
+
+        statusBox.textContent = message;
+        statusBox.className = `rounded-2xl border px-4 py-3 text-sm ${
+            tone === 'green'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : tone === 'rose'
+                    ? 'border-rose-200 bg-rose-50 text-rose-700'
+                    : 'border-slate-200 bg-slate-50 text-slate-600'
+        }`;
+    };
+
+    const closeModal = () => {
+        if (neverInput.checked) {
+            window.localStorage.setItem(neverKey, '1');
+        }
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        modal.setAttribute('aria-hidden', 'true');
+    };
+
+    const openModal = () => {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        modal.setAttribute('aria-hidden', 'false');
+    };
+
+    closeButton.addEventListener('click', closeModal);
+    laterButton.addEventListener('click', closeModal);
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    allowButton.addEventListener('click', async () => {
+        allowButton.disabled = true;
+        laterButton.disabled = true;
+
+        try {
+            if (!support.canSubscribe) {
+                throw new Error(support.message);
+            }
+
+            await enablePushForCurrentDevice();
+            setStatus('Bu cihaz icin push bildirimi aktif.', 'green');
+            window.setTimeout(closeModal, 700);
+        } catch (error) {
+            setStatus(error?.response?.data?.message || error?.message || 'Bildirim acilamadi.', 'rose');
+        } finally {
+            allowButton.disabled = false;
+            laterButton.disabled = false;
+        }
+    });
+
+    const permission = window.Notification?.permission;
+
+    if (permission === 'denied') {
+        return;
+    }
+
+    if (!('serviceWorker' in navigator)) {
+        if (!support.canSubscribe && support.message) {
+            setStatus(support.message, 'rose');
+            openModal();
+        }
+
+        return;
+    }
+
+    navigator.serviceWorker.ready
+        .then((registration) => registration.pushManager.getSubscription())
+        .then((subscription) => {
+            if (subscription) {
+                return;
+            }
+
+            if (!support.canSubscribe && !support.message) {
+                return;
+            }
+
+            if (!support.canSubscribe) {
+                setStatus(support.message, 'rose');
+            }
+
+            openModal();
+        })
+        .catch(() => {
+            if (!support.canSubscribe && !support.message) {
+                return;
+            }
+
+            if (!support.canSubscribe) {
+                setStatus(support.message, 'rose');
+            }
+
+            openModal();
+        });
+}
+
+async function enablePushForCurrentDevice() {
+    const support = getPushSupportDetails();
+
+    if (!support.canSubscribe) {
+        throw new Error(support.message);
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+        throw new Error('Bildirim izni verilmedi.');
+    }
+
+    const baseUrl = getAppBaseUrl();
+    const registration = await navigator.serviceWorker.ready;
+    const publicKeyResponse = await window.axios.get(`${baseUrl}/webpush/public-key`);
+    const publicKey = publicKeyResponse.data.publicKey;
+
+    let subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey),
+        });
+    }
+
+    await window.axios.post(`${baseUrl}/webpush/subscribe`, {
+        endpoint: subscription.endpoint,
+        keys: subscription.toJSON().keys,
+        contentEncoding: 'aes128gcm',
+    });
+
+    return subscription;
 }
 
 function getAppBaseUrl() {
     return (document.body?.dataset?.appBaseUrl || window.location.origin).replace(/\/$/, '');
+}
+
+async function buildPushDeviceStatusPayload() {
+    const permissionState = 'Notification' in window ? Notification.permission : 'default';
+    const platform = getPlatformType();
+    const browser = getBrowserType();
+    const deviceKey = getPushDeviceKey();
+    let subscriptionEndpoint = null;
+
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            subscriptionEndpoint = subscription?.endpoint || null;
+        } catch (error) {
+            subscriptionEndpoint = null;
+        }
+    }
+
+    return {
+        device_key: deviceKey,
+        device_label: getPushDeviceLabel(platform, browser),
+        platform,
+        browser,
+        user_agent: window.navigator.userAgent || '',
+        permission_state: permissionState,
+        subscription_endpoint: subscriptionEndpoint,
+        is_standalone: isRunningStandalone(),
+    };
+}
+
+function getPushDeviceKey() {
+    const storageKey = 'push_device_key';
+    const existing = window.localStorage.getItem(storageKey);
+
+    if (existing) {
+        return existing;
+    }
+
+    const generated = `device_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+    window.localStorage.setItem(storageKey, generated);
+    return generated;
+}
+
+function getPushDeviceLabel(platform, browser) {
+    const platformLabels = {
+        ios: 'iPhone / iPad',
+        android: 'Android',
+        windows: 'Windows',
+        macos: 'macOS',
+        linux: 'Linux',
+        other: 'Diger',
+    };
+    const browserLabels = {
+        chrome: 'Chrome',
+        edge: 'Edge',
+        firefox: 'Firefox',
+        safari: 'Safari',
+        opera: 'Opera',
+        other: 'Tarayici',
+    };
+
+    return `${platformLabels[platform] || 'Cihaz'} ${browserLabels[browser] || 'Tarayici'} ${isRunningStandalone() ? 'PWA' : 'Web'}`;
 }
 
 function initPwaInstallControls() {

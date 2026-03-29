@@ -30,7 +30,9 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
         $loginLogService->store($request->user(), $request->ip(), $request->userAgent());
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()
+            ->intended(route('dashboard', absolute: false))
+            ->with('showPushPrompt', true);
     }
 
     /**
