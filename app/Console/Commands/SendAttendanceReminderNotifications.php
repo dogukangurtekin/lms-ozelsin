@@ -52,7 +52,8 @@ class SendAttendanceReminderNotifications extends Command
                 [$schedule->teacher_id],
                 'Yoklama hatirlatmasi',
                 (($schedule->class?->name ?? 'Sinif') . ' sinifi icin ' . ($schedule->lesson_name ?: 'ders') . ' yoklamasi henuz alinmadi. Lutfen yoklama islemini tamamlayin.'),
-                route('attendance.index', ['date' => $today, 'schedule_id' => $schedule->id])
+                route('attendance.index', ['date' => $today, 'schedule_id' => $schedule->id]),
+                ['notification_type' => 'attendance_reminder']
             );
         }
 

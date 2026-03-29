@@ -29,6 +29,40 @@
     </style>
 </head>
 <body class="font-sans antialiased overflow-hidden" data-app-base-url="{{ url('/') }}">
+    @php
+        $headerNotifications = collect();
+        $headerNotificationCount = 0;
+        $readNotificationIds = collect();
+
+        if (auth()->check() && \Illuminate\Support\Facades\Schema::hasTable('notification_logs')) {
+            $currentUser = auth()->user();
+
+            $headerNotifications = \App\Models\NotificationLog::query()
+                ->visibleToUser($currentUser)
+                ->whereIn('status', ['sent', 'partial'])
+                ->latest('sent_at')
+                ->limit(8)
+                ->get();
+
+            if (\Illuminate\Support\Facades\Schema::hasTable('notification_log_reads') && $headerNotifications->isNotEmpty()) {
+                $readNotificationIds = \App\Models\NotificationLogRead::query()
+                    ->where('user_id', $currentUser->id)
+                    ->whereIn('notification_log_id', $headerNotifications->pluck('id'))
+                    ->pluck('notification_log_id');
+
+                $headerNotificationCount = \App\Models\NotificationLog::query()
+                    ->visibleToUser($currentUser)
+                    ->whereIn('status', ['sent', 'partial'])
+                    ->whereDoesntHave('reads', function ($query) use ($currentUser) {
+                        $query->where('user_id', $currentUser->id);
+                    })
+                    ->count();
+            } else {
+                $headerNotificationCount = $headerNotifications->count();
+            }
+        }
+    @endphp
+
     <div x-data="{ sidebarOpen: false }" class="h-screen lms-bg text-slate-900 overflow-hidden">
         <div class="flex h-screen min-w-0 overflow-hidden">
             <aside class="hidden lg:flex w-72 flex-col border-r border-slate-200 bg-white/90 backdrop-blur">
@@ -57,6 +91,78 @@
                     </div>
 
                     <div class="flex items-center gap-2 shrink-0 ml-3">
+                        <div class="relative" x-data="{ notificationMenuOpen: false }">
+                            <button
+                                type="button"
+                                @click="notificationMenuOpen = !notificationMenuOpen"
+                                class="relative inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50"
+                                aria-label="Bildirimler"
+                            >
+                                <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17H9.143m10.286 0H20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2h.571m14.286 0V11a6.857 6.857 0 1 0-13.714 0v6m13.714 0H5.143" />
+                                </svg>
+                                @if($headerNotificationCount > 0)
+                                    <span class="absolute -right-1 -top-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                                        {{ $headerNotificationCount > 9 ? '9+' : $headerNotificationCount }}
+                                    </span>
+                                @endif
+                            </button>
+
+                            <div
+                                x-show="notificationMenuOpen"
+                                @click.outside="notificationMenuOpen = false"
+                                style="display:none;"
+                                class="absolute right-0 mt-2 w-[22rem] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl z-50"
+                            >
+                                <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+                                    <div>
+                                        <div class="text-sm font-semibold text-slate-900">Bildirimler</div>
+                                        <div class="text-xs text-slate-500">Son gonderilen bildirimler</div>
+                                    </div>
+                                    <a href="{{ route('notifications.index') }}" class="text-xs font-semibold text-slate-700 hover:text-slate-900">
+                                        Tumu
+                                    </a>
+                                </div>
+
+                                <div class="max-h-[26rem] overflow-y-auto">
+                                    @forelse($headerNotifications as $notification)
+                                        @php
+                                            $isRead = $readNotificationIds->contains($notification->id);
+                                        @endphp
+                                        <a
+                                            href="{{ $notification->url ?: route('notifications.index') }}"
+                                            data-notification-read-url="{{ route('notifications.read', $notification) }}"
+                                            class="block border-b border-slate-100 px-4 py-3 hover:bg-slate-50 {{ $isRead ? 'bg-white' : 'bg-sky-50/70' }}"
+                                        >
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <div class="truncate text-sm font-semibold {{ $isRead ? 'text-slate-900' : 'text-sky-950' }}">{{ $notification->title }}</div>
+                                                    <p class="mt-1 overflow-hidden text-ellipsis text-xs text-slate-600">{{ \Illuminate\Support\Str::limit($notification->body, 110) }}</p>
+                                                </div>
+                                                <div class="flex flex-col items-end gap-2">
+                                                    <span class="rounded-full px-2 py-1 text-[10px] font-semibold {{ $notification->status === 'partial' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700' }}">
+                                                        {{ $notification->status }}
+                                                    </span>
+                                                    @unless($isRead)
+                                                        <span class="rounded-full bg-sky-600 px-2 py-1 text-[10px] font-semibold text-white">
+                                                            Yeni
+                                                        </span>
+                                                    @endunless
+                                                </div>
+                                            </div>
+                                            <div class="mt-2 text-[11px] text-slate-500">
+                                                {{ optional($notification->sent_at)->format('d.m.Y H:i') }}
+                                            </div>
+                                        </a>
+                                    @empty
+                                        <div class="px-4 py-6 text-sm text-slate-500">
+                                            Gosterilecek bildirim yok.
+                                        </div>
+                                    @endforelse
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="relative" x-data="{ userMenuOpen: false }">
                             <button type="button"
                                     @click="userMenuOpen = !userMenuOpen"

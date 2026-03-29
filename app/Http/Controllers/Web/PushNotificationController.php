@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\NotificationLog;
+use App\Models\NotificationLogRead;
+use App\Models\NotificationPreference;
 use App\Models\PushSubscription as PushSubscriptionModel;
 use App\Services\PushNotificationService;
 use Illuminate\Http\JsonResponse;
@@ -20,21 +22,32 @@ class PushNotificationController extends Controller
 
     public function index(Request $request)
     {
+        $user = $request->user();
         $pushSubscriptionCount = 0;
         $notificationLogs = collect();
         $failedLogs = collect();
+        $isAdmin = $user->hasRole('admin');
+        $notificationPreferenceDefinitions = $this->preferenceDefinitionsFor($user);
+        $userNotificationPreferences = collect();
 
         if (Schema::hasTable('push_subscriptions')) {
             $pushSubscriptionCount = PushSubscriptionModel::query()
-                ->where('user_id', $request->user()->id)
+                ->where('user_id', $user->id)
                 ->count();
+        }
+
+        if (Schema::hasTable('notification_preferences')) {
+            $userNotificationPreferences = NotificationPreference::query()
+                ->where('user_id', $user->id)
+                ->whereIn('notification_type', array_keys($notificationPreferenceDefinitions))
+                ->pluck('is_enabled', 'notification_type');
         }
 
         $statusFilter = (string) $request->input('status', '');
         $search = trim((string) $request->input('q', ''));
         $failedOnly = $request->boolean('failed_only');
 
-        if (Schema::hasTable('notification_logs')) {
+        if ($isAdmin && Schema::hasTable('notification_logs')) {
             $notificationLogs = NotificationLog::query()
                 ->with('user:id,name')
                 ->when($statusFilter !== '', fn ($query) => $query->where('status', $statusFilter))
@@ -65,8 +78,43 @@ class PushNotificationController extends Controller
             'failedLogs',
             'statusFilter',
             'search',
-            'failedOnly'
+            'failedOnly',
+            'notificationPreferenceDefinitions',
+            'userNotificationPreferences'
         ));
+    }
+
+    public function updatePreferences(Request $request): RedirectResponse
+    {
+        $definitions = $this->preferenceDefinitionsFor($request->user());
+        $validated = $request->validate([
+            'preferences' => ['nullable', 'array'],
+        ]);
+
+        $inputPreferences = collect($validated['preferences'] ?? []);
+        $rows = collect($definitions)
+            ->reject(fn (array $definition) => (bool) ($definition['locked'] ?? false))
+            ->map(function (array $definition, string $type) use ($inputPreferences, $request) {
+                return [
+                    'user_id' => $request->user()->id,
+                    'notification_type' => $type,
+                    'is_enabled' => $inputPreferences->has($type),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            })
+            ->values()
+            ->all();
+
+        if (Schema::hasTable('notification_preferences') && $rows !== []) {
+            NotificationPreference::query()->upsert(
+                $rows,
+                ['user_id', 'notification_type'],
+                ['is_enabled', 'updated_at']
+            );
+        }
+
+        return back()->with('success', 'Bildirim ayarlari guncellendi.');
     }
 
     public function subscribe(Request $request): JsonResponse
@@ -158,12 +206,14 @@ class PushNotificationController extends Controller
                 [$request->user()->id],
                 $validated['title'],
                 $validated['body'],
-                $validated['url'] ?? route('dashboard')
+                $validated['url'] ?? route('dashboard'),
+                ['notification_type' => 'system_message']
             )
             : $this->pushNotifications->sendToAll(
                 $validated['title'],
                 $validated['body'],
-                $validated['url'] ?? route('dashboard')
+                $validated['url'] ?? route('dashboard'),
+                ['notification_type' => 'system_message']
             );
 
         if ($sentCount === 0) {
@@ -223,8 +273,55 @@ class PushNotificationController extends Controller
         return back()->with('success', 'Bildirim tekrar gonderildi.');
     }
 
+    public function markAsRead(Request $request, NotificationLog $notificationLog): JsonResponse
+    {
+        abort_unless(
+            NotificationLog::query()
+                ->whereKey($notificationLog->getKey())
+                ->visibleToUser($request->user())
+                ->exists(),
+            404
+        );
+
+        if (! Schema::hasTable('notification_log_reads')) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Bildirim okunma tablosu hazir degil.',
+            ], 503);
+        }
+
+        NotificationLogRead::query()->updateOrCreate(
+            [
+                'notification_log_id' => $notificationLog->id,
+                'user_id' => $request->user()->id,
+            ],
+            [
+                'read_at' => now(),
+            ]
+        );
+
+        return response()->json([
+            'ok' => true,
+        ]);
+    }
+
     public function broadcastSystemNotice(string $title, string $body, ?string $url = null): void
     {
-        $this->pushNotifications->sendToAll($title, $body, $url ?? route('dashboard'));
+        $this->pushNotifications->sendToAll($title, $body, $url ?? route('dashboard'), [
+            'notification_type' => 'system_message',
+        ]);
+    }
+
+    private function preferenceDefinitionsFor($user): array
+    {
+        $roleNames = $user->roles()->pluck('name')->all();
+
+        return collect(NotificationPreference::definitions())
+            ->filter(function (array $definition) use ($roleNames) {
+                $roles = $definition['roles'] ?? [];
+
+                return $roles === [] || array_intersect($roles, $roleNames) !== [];
+            })
+            ->all();
     }
 }

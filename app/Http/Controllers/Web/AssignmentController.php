@@ -292,7 +292,8 @@ class AssignmentController extends Controller
             $recipientUserIds,
             'Yeni odev yayimlandi',
             "Sayin kullanici, {$targetLabel} icin {$assignment->title} baslikli yeni odev yayimlandi.",
-            route('assignments.show', $assignment)
+            route('assignments.show', $assignment),
+            ['notification_type' => 'assignment_created']
         );
     }
 

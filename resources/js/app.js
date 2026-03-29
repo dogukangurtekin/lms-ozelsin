@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     registerServiceWorker();
     initPushControls();
     initPwaInstallControls();
+    initNotificationReadLinks();
 });
 
 window.addEventListener('beforeinstallprompt', (event) => {
@@ -206,6 +207,42 @@ function initPwaInstallControls() {
             } catch (error) {
                 setStatus(error?.message || 'Kurulum baslatilamadi.', 'rose');
             }
+        });
+    });
+}
+
+function initNotificationReadLinks() {
+    const links = document.querySelectorAll('[data-notification-read-url]');
+
+    if (!links.length) {
+        return;
+    }
+
+    links.forEach((link) => {
+        link.addEventListener('click', () => {
+            const readUrl = link.dataset.notificationReadUrl;
+
+            if (!readUrl) {
+                return;
+            }
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+            if (navigator.sendBeacon && csrfToken) {
+                const payload = new FormData();
+                payload.append('_token', csrfToken);
+                navigator.sendBeacon(readUrl, payload);
+                return;
+            }
+
+            window.fetch(readUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken || '',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            }).catch(() => {});
         });
     });
 }

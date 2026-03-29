@@ -1,6 +1,21 @@
 <x-app-layout>
     <x-slot name="header">Bildirimler</x-slot>
 
+    @php
+        $resolvedPreferences = collect($notificationPreferenceDefinitions)->map(function ($definition, $type) use ($userNotificationPreferences) {
+            $locked = (bool) ($definition['locked'] ?? false);
+            $enabled = $locked
+                ? true
+                : (bool) ($userNotificationPreferences[$type] ?? ($definition['default'] ?? true));
+
+            return $definition + [
+                'type' => $type,
+                'enabled' => $enabled,
+                'locked' => $locked,
+            ];
+        })->values();
+    @endphp
+
     <div class="space-y-6">
         @if(session('success'))
             <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
@@ -18,12 +33,12 @@
             </div>
         @endif
 
-        <section class="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]">
+        <section class="grid gap-6 {{ auth()->user()?->hasRole('admin') ? 'lg:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.9fr)]' : '' }}">
             <article class="lms-panel">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                         <h3 class="text-lg font-semibold text-slate-900">PWA ve Push Bildirimleri</h3>
-                        <p class="mt-1 text-sm text-slate-600">Uygulamayi telefona ekleyip bu cihaz icin anlik bildirim alabilirsiniz.</p>
+                        <p class="mt-1 text-sm text-slate-600">Bu cihaz icin push izni verip size gonderilebilecek bildirim turlerini yonetebilirsiniz.</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" data-pwa-install class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
@@ -34,6 +49,9 @@
                         </button>
                         <button type="button" data-push-disable class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                             Kapat
+                        </button>
+                        <button type="button" onclick="document.getElementById('notification-settings-dialog').showModal()" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                            Bildirim Ayarlari
                         </button>
                     </div>
                 </div>
@@ -51,13 +69,29 @@
                 <div data-pwa-install-status class="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
                     Uygulamayi telefona eklemek icin kurulum butonunu kullanin.
                 </div>
+
+                <div class="mt-4 grid gap-3 md:grid-cols-2">
+                    @foreach($resolvedPreferences as $preference)
+                        <div class="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <div class="font-medium text-slate-900">{{ $preference['label'] }}</div>
+                                    <p class="mt-1 text-xs text-slate-500">{{ $preference['description'] }}</p>
+                                </div>
+                                <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold {{ $preference['enabled'] ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">
+                                    {{ $preference['locked'] ? 'Zorunlu' : ($preference['enabled'] ? 'Acik' : 'Kapali') }}
+                                </span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
             </article>
 
             @if(auth()->user()?->hasRole('admin'))
                 <article class="lms-panel">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="lms-panel-title">Push Bildirim Gonder</h3>
-                        <span class="text-xs text-slate-500">PWA uzerinden anlik bildirim</span>
+                        <span class="text-xs text-slate-500">Sadece admin gorebilir</span>
                     </div>
                     <form method="POST" action="{{ route('push.send') }}" class="space-y-3">
                         @csrf
@@ -88,123 +122,171 @@
             @endif
         </section>
 
-        <section class="lms-panel">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <h3 class="lms-panel-title">Bildirim Gecmisi</h3>
-                    <p class="text-xs text-slate-500">Son 50 push bildirimi ve sonuc kayitlari</p>
-                </div>
-            </div>
-
-            <form method="GET" action="{{ route('notifications.index') }}" class="mb-4 grid gap-3 md:grid-cols-[minmax(0,1.2fr)_220px_180px_auto]">
-                <input type="text" name="q" value="{{ $search }}" placeholder="Baslik, mesaj, hedef veya hata ara" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
-                <select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
-                    <option value="">Tum durumlar</option>
-                    <option value="sent" @selected($statusFilter === 'sent')>Basarili</option>
-                    <option value="partial" @selected($statusFilter === 'partial')>Kismi</option>
-                    <option value="failed" @selected($statusFilter === 'failed')>Hatali</option>
-                    <option value="no_target" @selected($statusFilter === 'no_target')>Hedef yok</option>
-                </select>
-                <label class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
-                    <input type="checkbox" name="failed_only" value="1" @checked($failedOnly)>
-                    Sadece hatalilar
-                </label>
-                <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
-                    Filtrele
-                </button>
-            </form>
-
-            <div class="mb-5 rounded-2xl border border-rose-200 bg-rose-50 p-4">
-                <div class="flex items-center justify-between mb-3">
+        @if(auth()->user()?->hasRole('admin'))
+            <section class="lms-panel">
+                <div class="flex items-center justify-between mb-4">
                     <div>
-                        <h4 class="text-sm font-semibold text-rose-800">Hatali Bildirimler</h4>
-                        <p class="text-xs text-rose-600">Son 20 hatali veya kismi sonuc kaydi</p>
+                        <h3 class="lms-panel-title">Bildirim Gecmisi</h3>
+                        <p class="text-xs text-slate-500">Son 50 push bildirimi ve sonuc kayitlari</p>
                     </div>
                 </div>
-                <div class="space-y-3">
-                    @forelse($failedLogs as $log)
-                        <div class="rounded-xl border border-rose-200 bg-white px-3 py-3">
-                            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                                <div class="min-w-0">
-                                    <div class="font-medium text-slate-800">{{ $log->title }}</div>
-                                    <div class="text-xs text-slate-500">{{ optional($log->sent_at)->format('d.m.Y H:i') }} | {{ $log->status }}</div>
-                                    <div class="mt-1 text-sm text-slate-600">{{ $log->error_message ?: 'Hata detayi yok.' }}</div>
-                                </div>
-                                @if(auth()->user()?->hasRole('admin'))
+
+                <form method="GET" action="{{ route('notifications.index') }}" class="mb-4 grid gap-3 md:grid-cols-[minmax(0,1.2fr)_220px_180px_auto]">
+                    <input type="text" name="q" value="{{ $search }}" placeholder="Baslik, mesaj, hedef veya hata ara" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                    <select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                        <option value="">Tum durumlar</option>
+                        <option value="sent" @selected($statusFilter === 'sent')>Basarili</option>
+                        <option value="partial" @selected($statusFilter === 'partial')>Kismi</option>
+                        <option value="failed" @selected($statusFilter === 'failed')>Hatali</option>
+                        <option value="no_target" @selected($statusFilter === 'no_target')>Hedef yok</option>
+                    </select>
+                    <label class="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
+                        <input type="checkbox" name="failed_only" value="1" @checked($failedOnly)>
+                        Sadece hatalilar
+                    </label>
+                    <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+                        Filtrele
+                    </button>
+                </form>
+
+                <div class="mb-5 rounded-2xl border border-rose-200 bg-rose-50 p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h4 class="text-sm font-semibold text-rose-800">Hatali Bildirimler</h4>
+                            <p class="text-xs text-rose-600">Son 20 hatali veya kismi sonuc kaydi</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        @forelse($failedLogs as $log)
+                            <div class="rounded-xl border border-rose-200 bg-white px-3 py-3">
+                                <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                    <div class="min-w-0">
+                                        <div class="font-medium text-slate-800">{{ $log->title }}</div>
+                                        <div class="text-xs text-slate-500">{{ optional($log->sent_at)->format('d.m.Y H:i') }} | {{ $log->status }}</div>
+                                        <div class="mt-1 text-sm text-slate-600">{{ $log->error_message ?: 'Hata detayi yok.' }}</div>
+                                    </div>
                                     <form method="POST" action="{{ route('notifications.resend', $log) }}">
                                         @csrf
                                         <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700">
                                             Tekrar Gonder
                                         </button>
                                     </form>
-                                @endif
+                                </div>
                             </div>
-                        </div>
-                    @empty
-                        <div class="text-sm text-slate-600">Hatali bildirim kaydi yok.</div>
-                    @endforelse
+                        @empty
+                            <div class="text-sm text-slate-600">Hatali bildirim kaydi yok.</div>
+                        @endforelse
+                    </div>
                 </div>
-            </div>
 
-            <div class="overflow-x-auto">
-                <table class="lms-table">
-                    <thead>
-                        <tr>
-                            <th>Tarih</th>
-                            <th>Baslik</th>
-                            <th>Hedef</th>
-                            <th>Durum</th>
-                            <th>Basarili</th>
-                            <th>Hatali</th>
-                            <th>Detay</th>
-                            <th>Islem</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($notificationLogs as $log)
+                <div class="overflow-x-auto">
+                    <table class="lms-table">
+                        <thead>
                             <tr>
-                                <td>{{ optional($log->sent_at)->format('d.m.Y H:i') }}</td>
-                                <td>
-                                    <div class="font-medium text-slate-800">{{ $log->title }}</div>
-                                    <div class="text-xs text-slate-500">{{ $log->body }}</div>
-                                </td>
-                                <td>
-                                    <div>{{ $log->target_type ?: '-' }}</div>
-                                    <div class="text-xs text-slate-500">{{ $log->target_summary ?: '-' }}</div>
-                                </td>
-                                <td>
-                                    <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold
-                                        {{ $log->status === 'sent' ? 'bg-emerald-100 text-emerald-700' : '' }}
-                                        {{ $log->status === 'partial' ? 'bg-amber-100 text-amber-700' : '' }}
-                                        {{ $log->status === 'failed' || $log->status === 'no_target' ? 'bg-rose-100 text-rose-700' : '' }}">
-                                        {{ $log->status }}
-                                    </span>
-                                </td>
-                                <td>{{ $log->success_count }}</td>
-                                <td>{{ $log->failed_count }}</td>
-                                <td class="text-xs text-slate-500">
-                                    <div>Gonderen: {{ $log->user?->name ?? '-' }}</div>
-                                    <div>{{ $log->error_message ?: '-' }}</div>
-                                </td>
-                                <td>
-                                    @if(auth()->user()?->hasRole('admin'))
+                                <th>Tarih</th>
+                                <th>Baslik</th>
+                                <th>Hedef</th>
+                                <th>Durum</th>
+                                <th>Basarili</th>
+                                <th>Hatali</th>
+                                <th>Detay</th>
+                                <th>Islem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($notificationLogs as $log)
+                                <tr>
+                                    <td>{{ optional($log->sent_at)->format('d.m.Y H:i') }}</td>
+                                    <td>
+                                        <div class="font-medium text-slate-800">{{ $log->title }}</div>
+                                        <div class="text-xs text-slate-500">{{ $log->body }}</div>
+                                    </td>
+                                    <td>
+                                        <div>{{ $log->target_type ?: '-' }}</div>
+                                        <div class="text-xs text-slate-500">{{ $log->target_summary ?: '-' }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold
+                                            {{ $log->status === 'sent' ? 'bg-emerald-100 text-emerald-700' : '' }}
+                                            {{ $log->status === 'partial' ? 'bg-amber-100 text-amber-700' : '' }}
+                                            {{ $log->status === 'failed' || $log->status === 'no_target' ? 'bg-rose-100 text-rose-700' : '' }}">
+                                            {{ $log->status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ $log->success_count }}</td>
+                                    <td>{{ $log->failed_count }}</td>
+                                    <td class="text-xs text-slate-500">
+                                        <div>Gonderen: {{ $log->user?->name ?? '-' }}</div>
+                                        <div>{{ $log->error_message ?: '-' }}</div>
+                                    </td>
+                                    <td>
                                         <form method="POST" action="{{ route('notifications.resend', $log) }}">
                                             @csrf
                                             <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
                                                 Tekrar Gonder
                                             </button>
                                         </form>
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="8">Bildirim kaydi bulunamadi.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="8">Bildirim kaydi bulunamadi.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        @endif
     </div>
+
+    <dialog id="notification-settings-dialog" class="backdrop:bg-slate-900/50 w-full max-w-2xl rounded-2xl border border-slate-200 p-0">
+        <form method="dialog" class="border-b border-slate-200 px-6 py-4">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900">Bildirim Ayarlari</h3>
+                    <p class="mt-1 text-sm text-slate-500">Sistemin size gonderebildigi bildirim turlerini acip kapatabilirsiniz.</p>
+                </div>
+                <button type="submit" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    Kapat
+                </button>
+            </div>
+        </form>
+
+        <form method="POST" action="{{ route('notifications.preferences.update') }}" class="px-6 py-5">
+            @csrf
+            <div class="space-y-4">
+                @foreach($resolvedPreferences as $preference)
+                    <label class="flex items-start justify-between gap-4 rounded-xl border border-slate-200 px-4 py-4">
+                        <div>
+                            <div class="font-medium text-slate-900">{{ $preference['label'] }}</div>
+                            <p class="mt-1 text-sm text-slate-500">{{ $preference['description'] }}</p>
+                            @if($preference['locked'])
+                                <p class="mt-2 text-xs font-semibold text-slate-400">Bu bildirim zorunludur ve kapatilamaz.</p>
+                            @endif
+                        </div>
+                        <div class="pt-1">
+                            <input
+                                type="checkbox"
+                                name="preferences[{{ $preference['type'] }}]"
+                                value="1"
+                                class="h-5 w-5 rounded border-slate-300 text-slate-900 focus:ring-slate-800"
+                                @checked($preference['enabled'])
+                                @disabled($preference['locked'])
+                            >
+                        </div>
+                    </label>
+                @endforeach
+            </div>
+
+            <div class="mt-6 flex items-center justify-end gap-3">
+                <button type="button" onclick="document.getElementById('notification-settings-dialog').close()" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                    Vazgec
+                </button>
+                <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+                    Ayarlari Kaydet
+                </button>
+            </div>
+        </form>
+    </dialog>
 </x-app-layout>

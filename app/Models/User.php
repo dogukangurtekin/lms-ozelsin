@@ -103,4 +103,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(PushSubscription::class);
     }
+
+    public function notificationPreferences(): HasMany
+    {
+        return $this->hasMany(NotificationPreference::class);
+    }
+
+    public function notificationLogReads(): HasMany
+    {
+        return $this->hasMany(NotificationLogRead::class);
+    }
 }

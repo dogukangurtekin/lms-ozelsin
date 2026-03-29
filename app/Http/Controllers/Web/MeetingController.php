@@ -163,7 +163,8 @@ class MeetingController extends Controller
             $recipientUserIds,
             'Yeni gorusme bilgilendirmesi',
             "{$studentName} icin {$meetingTime} tarihli yeni bir gorusme planlandi.",
-            route('meetings.show', $meeting)
+            route('meetings.show', $meeting),
+            ['notification_type' => 'meeting_created']
         );
     }
 }

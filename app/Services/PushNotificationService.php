@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\NotificationLog;
+use App\Models\NotificationPreference;
 use App\Models\PushSubscription;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;
@@ -15,6 +16,7 @@ class PushNotificationService
     public function sendToUsers(iterable $userIds, string $title, string $body, ?string $url = null, array $meta = []): int
     {
         $targetUserIds = collect($userIds)->filter()->unique()->values();
+        $notificationType = (string) ($meta['notification_type'] ?? 'system_message');
         if (! $this->canSendInCurrentRuntime()) {
             return $this->sendViaCli([
                 'mode' => 'users',
@@ -23,6 +25,7 @@ class PushNotificationService
                 'body' => $body,
                 'url' => $url,
                 'meta' => array_merge($meta, [
+                    'notification_type' => $notificationType,
                     'target_type' => $meta['target_type'] ?? 'users',
                     'target_summary' => $meta['target_summary'] ?? ('user_ids:' . $targetUserIds->implode(',')),
                     'target_count' => $meta['target_count'] ?? $targetUserIds->count(),
@@ -31,11 +34,10 @@ class PushNotificationService
             ]);
         }
 
-        $subscriptions = PushSubscription::query()
-            ->whereIn('user_id', $targetUserIds)
-            ->get();
+        $subscriptions = $this->subscriptionsForUsersByPreference($targetUserIds, $notificationType);
 
         return $this->sendToSubscriptions($subscriptions, $title, $body, $url, array_merge($meta, [
+            'notification_type' => $notificationType,
             'target_type' => $meta['target_type'] ?? 'users',
             'target_summary' => $meta['target_summary'] ?? ('user_ids:' . $targetUserIds->implode(',')),
             'target_count' => $meta['target_count'] ?? $targetUserIds->count(),
@@ -45,7 +47,9 @@ class PushNotificationService
 
     public function sendToAll(string $title, string $body, ?string $url = null, array $meta = []): int
     {
-        $targetCount = PushSubscription::query()->distinct('user_id')->count('user_id');
+        $notificationType = (string) ($meta['notification_type'] ?? 'system_message');
+        $subscriptions = $this->subscriptionsForAllByPreference($notificationType);
+        $targetCount = $subscriptions->pluck('user_id')->unique()->count();
         if (! $this->canSendInCurrentRuntime()) {
             return $this->sendViaCli([
                 'mode' => 'all',
@@ -53,6 +57,7 @@ class PushNotificationService
                 'body' => $body,
                 'url' => $url,
                 'meta' => array_merge($meta, [
+                    'notification_type' => $notificationType,
                     'target_type' => $meta['target_type'] ?? 'all',
                     'target_summary' => $meta['target_summary'] ?? 'all subscribed users',
                     'target_count' => $meta['target_count'] ?? $targetCount,
@@ -61,7 +66,8 @@ class PushNotificationService
             ]);
         }
 
-        return $this->sendToSubscriptions(PushSubscription::query()->get(), $title, $body, $url, array_merge($meta, [
+        return $this->sendToSubscriptions($subscriptions, $title, $body, $url, array_merge($meta, [
+            'notification_type' => $notificationType,
             'target_type' => $meta['target_type'] ?? 'all',
             'target_summary' => $meta['target_summary'] ?? 'all subscribed users',
             'target_count' => $meta['target_count'] ?? $targetCount,
@@ -167,6 +173,49 @@ class PushNotificationService
     private function canSendInCurrentRuntime(): bool
     {
         return extension_loaded('curl');
+    }
+
+    private function subscriptionsForUsersByPreference(Collection $userIds, string $notificationType): Collection
+    {
+        if ($userIds->isEmpty()) {
+            return collect();
+        }
+
+        if (NotificationPreference::isLocked($notificationType)) {
+            return PushSubscription::query()
+                ->whereIn('user_id', $userIds)
+                ->get();
+        }
+
+        $disabledUserIds = NotificationPreference::query()
+            ->whereIn('user_id', $userIds)
+            ->where('notification_type', $notificationType)
+            ->where('is_enabled', false)
+            ->pluck('user_id');
+
+        return PushSubscription::query()
+            ->whereIn('user_id', $userIds->diff($disabledUserIds)->values())
+            ->get();
+    }
+
+    private function subscriptionsForAllByPreference(string $notificationType): Collection
+    {
+        $query = PushSubscription::query();
+
+        if (NotificationPreference::isLocked($notificationType)) {
+            return $query->get();
+        }
+
+        $disabledUserIds = NotificationPreference::query()
+            ->where('notification_type', $notificationType)
+            ->where('is_enabled', false)
+            ->pluck('user_id');
+
+        if ($disabledUserIds->isNotEmpty()) {
+            $query->whereNotIn('user_id', $disabledUserIds);
+        }
+
+        return $query->get();
     }
 
     private function sendViaCli(array $payload): int

@@ -23,6 +23,8 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard')->middleware('module:dashboard');
     Route::get('/app-notifications', [PushNotificationController::class, 'index'])->name('notifications.index')->middleware('module:dashboard');
+    Route::post('/app-notifications/preferences', [PushNotificationController::class, 'updatePreferences'])->name('notifications.preferences.update')->middleware('module:dashboard');
+    Route::post('/app-notifications/{notificationLog}/read', [PushNotificationController::class, 'markAsRead'])->name('notifications.read')->middleware('module:dashboard');
     Route::get('/webpush/public-key', [PushNotificationController::class, 'publicKey'])->name('push.public-key');
     Route::post('/webpush/subscribe', [PushNotificationController::class, 'subscribe'])->name('push.subscribe');
     Route::delete('/webpush/unsubscribe', [PushNotificationController::class, 'unsubscribe'])->name('push.unsubscribe');

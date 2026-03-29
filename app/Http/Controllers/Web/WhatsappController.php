@@ -181,7 +181,8 @@ class WhatsappController extends Controller
                             [(int) $parent->id],
                             'Veli raporu hazir',
                             (($student->user?->name ?? 'Ogrenci') . ' ogrencisine ait rapor hazirlandi. Baglanti uzerinden goruntuleyebilirsiniz.'),
-                            $pdfUrl
+                            $pdfUrl,
+                            ['notification_type' => 'parent_report_ready']
                         );
                     }
                 }
