@@ -1,4 +1,4 @@
-﻿<div class="h-full flex flex-col overflow-y-auto">
+<div class="h-full flex flex-col overflow-y-auto">
     <div class="lms-sidebar-brand" style="height:64px;min-height:64px;max-height:64px;padding:0 20px;display:flex;align-items:center;box-sizing:border-box;flex:0 0 64px;">
         <a href="{{ url('dashboard') }}" class="flex items-center gap-3">
             <img src="{{ asset('assets/logo.png') }}" alt="LMS Logo" class="h-10 w-10 rounded-lg bg-white p-1 border border-slate-200 object-contain">

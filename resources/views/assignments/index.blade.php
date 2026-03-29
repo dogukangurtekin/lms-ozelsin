@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="header">Ödevler</x-slot>
 
     <div class="py-6">
