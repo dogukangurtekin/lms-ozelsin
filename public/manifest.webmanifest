@@ -1,8 +1,9 @@
 {
     "name": "Ozelsin Egitim Sistemi",
     "short_name": "Ozelsin",
-    "start_url": "./dashboard",
-    "scope": "./",
+    "id": "/",
+    "start_url": "/dashboard",
+    "scope": "/",
     "display": "standalone",
     "background_color": "#f8fafc",
     "theme_color": "#0f172a",

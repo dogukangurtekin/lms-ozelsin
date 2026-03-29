@@ -67,7 +67,7 @@
                 </div>
 
                 <div data-pwa-install-status class="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
-                    Uygulamayi telefona eklemek icin kurulum butonunu kullanin.
+                    iPhone kullaniyorsaniz Safari uzerinden Paylas > Ana Ekrana Ekle ile kurulumu tamamlayin. Android cihazlarda kurulum butonu otomatik pencereyi acabilir.
                 </div>
 
                 <div class="mt-4 grid gap-3 md:grid-cols-2">

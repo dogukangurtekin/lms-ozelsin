@@ -57,6 +57,8 @@ function initPushControls() {
     const statusBox = document.querySelector('[data-push-status]');
     const countBox = document.querySelector('[data-push-count]');
     const baseUrl = getAppBaseUrl();
+    const isIos = isIosDevice();
+    const isStandalone = isRunningStandalone();
 
     if (!enableButton || !statusBox) {
         return;
@@ -84,8 +86,14 @@ function initPushControls() {
         setBusy(true);
 
         try {
+            if (isIos && !isStandalone) {
+                throw new Error('iPhone icin once Safari uzerinden Paylas > Ana Ekrana Ekle ile uygulamayi kurun.');
+            }
+
             if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                throw new Error('Bu tarayici push bildirimi desteklemiyor.');
+                throw new Error(isIos
+                    ? 'iPhone push bildirimi sadece Ana Ekrana eklenmis Safari web uygulamasinda calisir.'
+                    : 'Bu tarayici push bildirimi desteklemiyor.');
             }
 
             const permission = await Notification.requestPermission();
@@ -167,6 +175,8 @@ function getAppBaseUrl() {
 function initPwaInstallControls() {
     const installButtons = document.querySelectorAll('[data-pwa-install]');
     const installStatus = document.querySelector('[data-pwa-install-status]');
+    const isIos = isIosDevice();
+    const isStandalone = isRunningStandalone();
 
     if (!installButtons.length || !installStatus) {
         return;
@@ -183,13 +193,34 @@ function initPwaInstallControls() {
         }`;
     };
 
+    if (isStandalone) {
+        installButtons.forEach((button) => {
+            button.disabled = true;
+        });
+        setStatus('Uygulama zaten bu cihaza kurulu gorunuyor.', 'green');
+        return;
+    }
+
+    if (isIos) {
+        installButtons.forEach((button) => {
+            button.disabled = false;
+        });
+
+        setStatus('iPhone kurulumu Safari uzerinden yapilir. Safari’de Paylas tusuna dokunup Ana Ekrana Ekle secenegini kullanin.');
+    }
+
     installButtons.forEach((button) => {
         button.disabled = !window.deferredPwaPrompt;
 
         button.addEventListener('click', async () => {
             try {
+                if (isIos) {
+                    setStatus('iPhone’da otomatik kurulum penceresi yok. Safari > Paylas > Ana Ekrana Ekle adimlarini izleyin.');
+                    return;
+                }
+
                 if (!window.deferredPwaPrompt) {
-                    setStatus('Bu cihazda kurulum penceresi henuz hazir degil. Android Chrome veya Edge kullanin.', 'rose');
+                    setStatus('Bu cihazda kurulum penceresi henuz hazir degil.', 'rose');
                     return;
                 }
 
@@ -209,6 +240,19 @@ function initPwaInstallControls() {
             }
         });
     });
+}
+
+function isIosDevice() {
+    const userAgent = window.navigator.userAgent || '';
+    const platform = window.navigator.platform || '';
+
+    return /iPad|iPhone|iPod/.test(userAgent)
+        || (platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
+}
+
+function isRunningStandalone() {
+    return window.matchMedia?.('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
 }
 
 function initNotificationReadLinks() {
