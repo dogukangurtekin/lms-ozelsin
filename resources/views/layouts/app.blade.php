@@ -29,6 +29,18 @@
     <style>
         @media (max-width: 1024px) {
             .mobile-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            body { overflow-y: auto !important; }
+            .lms-shell,
+            .lms-shell-inner,
+            .lms-shell-main {
+                height: auto !important;
+                min-height: 100vh !important;
+                overflow: visible !important;
+            }
+            .lms-main-content {
+                overflow: visible !important;
+                max-height: none !important;
+            }
         }
         @media (max-width: 640px) {
             .mobile-progress-box {
@@ -81,13 +93,13 @@
         }
     @endphp
 
-    <div x-data="{ sidebarOpen: false }" class="h-screen lms-bg text-slate-900 overflow-hidden">
-        <div class="flex h-screen min-w-0 overflow-hidden">
+    <div x-data="{ sidebarOpen: false }" class="h-screen lms-bg text-slate-900 overflow-hidden lms-shell">
+        <div class="flex h-screen min-w-0 overflow-hidden lms-shell-inner">
             <aside class="hidden lg:flex w-72 flex-col border-r border-slate-200 bg-white/90 backdrop-blur">
                 @include('layouts.navigation')
             </aside>
 
-            <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+            <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden lms-shell-main">
                 <header class="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 lg:px-8" style="height:64px;min-height:64px;max-height:64px;flex:0 0 64px;">
                     <div class="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
                         <button
@@ -217,7 +229,7 @@
                     </div>
                 </header>
 
-                <main class="flex-1 px-3 sm:px-5 lg:px-8 pt-1 pb-32 sm:pb-12 lg:pb-8 overflow-y-auto overflow-x-hidden">
+                <main class="flex-1 px-3 sm:px-5 lg:px-8 pt-1 pb-32 sm:pb-12 lg:pb-8 overflow-y-auto overflow-x-hidden lms-main-content">
                     {{ $slot }}
                 </main>
             </div>
