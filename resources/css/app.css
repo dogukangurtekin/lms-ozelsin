@@ -261,6 +261,18 @@
     display: none;
 }
 
+.lms-topbar {
+    background: color-mix(in srgb, var(--lms-surface-strong) 88%, transparent) !important;
+    border-bottom: 1px solid var(--lms-border-soft) !important;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}
+
+html.dark .lms-topbar {
+    background: #0b1220 !important;
+    border-bottom: 1px solid #334155 !important;
+    box-shadow: 0 10px 26px rgba(2, 6, 23, 0.55);
+}
+
 html.dark .lms-page-title,
 html.dark .lms-page-title *,
 html.dark .text-slate-900,

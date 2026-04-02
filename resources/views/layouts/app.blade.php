@@ -50,6 +50,19 @@
                 width: auto !important;
                 max-width: none !important;
             }
+            .lms-header-actions {
+                gap: 0.35rem !important;
+                margin-left: 0.5rem !important;
+            }
+            .lms-theme-toggle {
+                width: 2.35rem !important;
+                height: 2.35rem !important;
+                min-height: 2.35rem !important;
+                flex: 0 0 auto !important;
+            }
+            .lms-user-name {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -100,7 +113,7 @@
             </aside>
 
             <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden lms-shell-main">
-                <header class="fixed top-0 left-0 lg:left-72 right-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 lg:px-8" style="height:64px;min-height:64px;max-height:64px;flex:0 0 64px;">
+                <header class="fixed top-0 left-0 lg:left-72 right-0 z-30 lms-topbar bg-white/90 backdrop-blur border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 lg:px-8" style="height:64px;min-height:64px;max-height:64px;flex:0 0 64px;">
                     <div class="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
                         <button
                             @click="sidebarOpen = true"
@@ -120,7 +133,7 @@
                         @endisset
                     </div>
 
-                    <div class="flex items-center gap-2 shrink-0 ml-3">
+                    <div class="flex items-center gap-2 shrink-0 ml-3 lms-header-actions">
                         <button
                             type="button"
                             class="lms-theme-toggle"
@@ -212,7 +225,7 @@
                             <button type="button"
                                     @click="userMenuOpen = !userMenuOpen"
                                     class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
-                                <span>{{ auth()->user()->name }}</span>
+                                <span class="lms-user-name">{{ auth()->user()->name }}</span>
                                 <span class="text-xs">▼</span>
                             </button>
                             <div x-show="userMenuOpen"
