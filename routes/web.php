@@ -81,6 +81,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index')->middleware('role:admin,teacher')->middleware('module:reports');
     Route::get('reports/quick/student-pdf', [ReportController::class, 'quickStudentPdf'])->name('reports.quick.student-pdf')->middleware('role:admin,teacher')->middleware('module:reports');
     Route::get('reports/quick/attendance-pdf', [ReportController::class, 'quickAttendancePdf'])->name('reports.quick.attendance-pdf')->middleware('role:admin,teacher')->middleware('module:reports');
+    Route::post('reports/exam-entry-package', [ReportController::class, 'examEntryPackage'])->name('reports.exam-entry-package')->middleware('role:admin,teacher')->middleware('module:reports');
     Route::get('lessons', [LessonController::class, 'index'])->name('lessons.index')->middleware('role:admin')->middleware('module:lessons');
     Route::post('lessons', [LessonController::class, 'store'])->name('lessons.store')->middleware('role:admin')->middleware('module:lessons');
     Route::post('lessons/import', [LessonController::class, 'import'])->name('lessons.import')->middleware('role:admin')->middleware('module:lessons');
