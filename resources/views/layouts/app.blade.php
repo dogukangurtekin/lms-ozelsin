@@ -100,7 +100,7 @@
             </aside>
 
             <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden lms-shell-main">
-                <header class="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 lg:px-8" style="height:64px;min-height:64px;max-height:64px;flex:0 0 64px;">
+                <header class="fixed top-0 left-0 lg:left-72 right-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 lg:px-8" style="height:64px;min-height:64px;max-height:64px;flex:0 0 64px;">
                     <div class="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
                         <button
                             @click="sidebarOpen = true"
@@ -229,7 +229,7 @@
                     </div>
                 </header>
 
-                <main class="flex-1 px-3 sm:px-5 lg:px-8 pt-1 pb-32 sm:pb-12 lg:pb-8 overflow-y-auto overflow-x-hidden lms-main-content">
+                <main class="flex-1 px-3 sm:px-5 lg:px-8 pt-0 pb-32 sm:pb-12 lg:pb-8 overflow-y-auto overflow-x-hidden lms-main-content" style="margin-top:64px;">
                     {{ $slot }}
                 </main>
             </div>
