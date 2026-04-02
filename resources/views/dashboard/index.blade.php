@@ -2,7 +2,7 @@
     <x-slot name="header">LMS Dashboard</x-slot>
 
     <div class="space-y-6">
-        <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4">
+        <section class="grid grid-cols-2 xl:grid-cols-6 gap-4">
             <div class="lms-stat-card"><p>Kullanicilar</p><h3>{{ $stats['users'] }}</h3></div>
             <div class="lms-stat-card"><p>Kitaplar</p><h3>{{ $stats['books'] }}</h3></div>
             <div class="lms-stat-card"><p>Odevler</p><h3>{{ $stats['assignments'] }}</h3></div>

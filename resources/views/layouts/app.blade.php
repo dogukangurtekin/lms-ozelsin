@@ -116,7 +116,11 @@
                             aria-label="Tema degistir"
                             aria-pressed="false"
                         >
-                            <span class="lms-theme-toggle-icon" data-theme-toggle-icon></span>
+                            <span class="lms-theme-toggle-icon" data-theme-toggle-icon>
+                                <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
+                                    <path d="M12 3a1 1 0 0 1 1 1v1.2a1 1 0 1 1-2 0V4a1 1 0 0 1 1-1Zm0 14.8a1 1 0 0 1 1 1V20a1 1 0 1 1-2 0v-1.2a1 1 0 0 1 1-1Zm8-5.8a1 1 0 0 1 1 1 1 1 0 0 1-1 1h-1.2a1 1 0 1 1 0-2H20ZM5.2 12a1 1 0 1 1 0 2H4a1 1 0 1 1 0-2h1.2Zm11.75-5.95a1 1 0 0 1 1.41 1.41l-.85.85a1 1 0 0 1-1.41-1.41l.85-.85Zm-9.1 9.1a1 1 0 0 1 1.41 1.41l-.85.85A1 1 0 0 1 7 15.99l.85-.84Zm9.1 2.26a1 1 0 0 1-1.41 0l-.85-.85a1 1 0 1 1 1.41-1.41l.85.85a1 1 0 0 1 0 1.41ZM8.7 8.7a1 1 0 0 1-1.41 0l-.85-.85a1 1 0 1 1 1.41-1.41l.85.85A1 1 0 0 1 8.7 8.7ZM12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"/>
+                                </svg>
+                            </span>
                             <span class="lms-theme-toggle-label" data-theme-toggle-label>Light</span>
                         </button>
 
@@ -213,7 +217,7 @@
                     </div>
                 </header>
 
-                <main class="flex-1 px-3 sm:px-5 lg:px-8 pt-1 pb-4 sm:pb-5 lg:pb-8 overflow-y-auto overflow-x-hidden">
+                <main class="flex-1 px-3 sm:px-5 lg:px-8 pt-1 pb-32 sm:pb-12 lg:pb-8 overflow-y-auto overflow-x-hidden">
                     {{ $slot }}
                 </main>
             </div>
@@ -223,10 +227,10 @@
             <div class="absolute inset-0 bg-black/40" @click="sidebarOpen = false"></div>
             <aside
                 x-show="sidebarOpen"
-                x-transition:enter="transform transition ease-out duration-[1000ms]"
+                x-transition:enter="transform transition ease-out duration-[120ms]"
                 x-transition:enter-start="-translate-x-full"
                 x-transition:enter-end="translate-x-0"
-                x-transition:leave="transform transition ease-in duration-[1000ms]"
+                x-transition:leave="transform transition ease-in duration-[100ms]"
                 x-transition:leave-start="translate-x-0"
                 x-transition:leave-end="-translate-x-full"
                 class="absolute left-0 top-0 h-full w-[86vw] max-w-72 bg-white border-r border-slate-200"

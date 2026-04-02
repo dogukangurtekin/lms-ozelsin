@@ -7,18 +7,17 @@
         @page { margin: 12mm 10mm; }
         * { box-sizing: border-box; }
         body { font-family: DejaVu Sans, sans-serif; color: #0f172a; font-size: 11px; margin: 0; }
-        .page {
+        .page-break {
             page-break-after: always;
-        }
-        .page:last-child {
-            page-break-after: auto;
         }
         .card {
             border: 1.8px solid #0f172a;
             border-radius: 18px;
             padding: 14px 16px 12px;
             background: #fff;
+            height: 258mm;
             overflow: hidden;
+            margin: 0;
         }
 
         .logo-wrap {
@@ -170,7 +169,6 @@
 </head>
 <body>
 @foreach($placements as $placement)
-    <section class="page">
         <div class="card">
             <div class="logo-wrap">
                 <table class="logo-table">
@@ -287,7 +285,9 @@
             <div class="footer">Özelsin Koleji Bilişim Yönetim Sistemleri v.1.0.</div>
 
         </div>
-    </section>
+        @if(!$loop->last)
+            <div class="page-break"></div>
+        @endif
 @endforeach
 </body>
 </html>

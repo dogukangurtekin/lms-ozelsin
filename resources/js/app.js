@@ -277,11 +277,10 @@ function initPushPromptModal() {
         return;
     }
 
-    const shouldPromptOnLogin = body.dataset.pushPromptOnLogin === '1';
     const userId = body.dataset.authUserId || 'guest';
     const neverKey = `push_prompt_never_${userId}`;
 
-    if (!shouldPromptOnLogin || window.localStorage.getItem(neverKey) === '1') {
+    if (window.localStorage.getItem(neverKey) === '1') {
         return;
     }
 
@@ -350,6 +349,10 @@ function initPushPromptModal() {
     const permission = window.Notification?.permission;
 
     if (permission === 'denied') {
+        setStatus('Bildirim izni tarayicida engelli. Tarayici ayarlarindan bu site icin izni acabilirsiniz.', 'rose');
+        allowButton.disabled = true;
+        allowButton.classList.add('opacity-60', 'cursor-not-allowed');
+        openModal();
         return;
     }
 
