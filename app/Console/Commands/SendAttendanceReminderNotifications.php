@@ -28,7 +28,7 @@ class SendAttendanceReminderNotifications extends Command
             ->where('day_of_week', $dayOfWeek)
             ->whereNotNull('teacher_id')
             ->whereNotNull('class_id')
-            ->whereNotNull('end_time')
+            ->whereNotNull('start_time')
             ->get();
 
         $sent = 0;
@@ -38,16 +38,14 @@ class SendAttendanceReminderNotifications extends Command
 
         foreach ($byTeacher as $teacherSchedules) {
             foreach ($teacherSchedules as $idx => $schedule) {
-                $endTime = (string) $schedule->end_time;
-                if ($endTime === '') {
-                    continue;
-                }
-
-                $lessonEnd = Carbon::createFromFormat('Y-m-d H:i:s', $today.' '.substr($endTime, 0, 8), $tz);
-                $reminderStart = $lessonEnd->copy()->subMinutes(5);
-                $isInLastFiveMinutes = $now->betweenIncluded($reminderStart, $lessonEnd);
-
                 $nextSchedule = $teacherSchedules->get($idx + 1);
+                $lessonStart = Carbon::createFromFormat(
+                    'Y-m-d H:i:s',
+                    $today.' '.substr((string) $schedule->start_time, 0, 8),
+                    $tz
+                );
+
+                $nextStart = null;
                 $isPastNextLesson20Minutes = false;
                 if ($nextSchedule && ! empty($nextSchedule->start_time)) {
                     $nextStart = Carbon::createFromFormat(
@@ -57,6 +55,20 @@ class SendAttendanceReminderNotifications extends Command
                     );
                     $isPastNextLesson20Minutes = $now->greaterThanOrEqualTo($nextStart->copy()->addMinutes(20));
                 }
+
+                // Ders bitisi: end_time varsa onu kullan, yoksa sonraki ders baslangicindan 1 dk onceyi kullan.
+                // Son ders ve end_time yoksa varsayilan 40 dakika ders suresi varsayilir.
+                $lessonEnd = null;
+                if (! empty($schedule->end_time)) {
+                    $lessonEnd = Carbon::createFromFormat('Y-m-d H:i:s', $today.' '.substr((string) $schedule->end_time, 0, 8), $tz);
+                } elseif ($nextStart) {
+                    $lessonEnd = $nextStart->copy()->subMinute();
+                } else {
+                    $lessonEnd = $lessonStart->copy()->addMinutes(40);
+                }
+
+                $reminderStart = $lessonEnd->copy()->subMinutes(5);
+                $isInLastFiveMinutes = $now->betweenIncluded($reminderStart, $lessonEnd);
 
                 // Son ders fallback: sonraki ders yoksa, ders bitiminden 20 dk sonra da bir kez hatirlat.
                 $isPastLessonEnd20Minutes = $nextSchedule ? false : $now->greaterThanOrEqualTo($lessonEnd->copy()->addMinutes(20));
@@ -98,7 +110,7 @@ class SendAttendanceReminderNotifications extends Command
                     [$schedule->teacher_id],
                     'Yoklama hatirlatmasi',
                     (($schedule->class?->name ?? 'Sinif') . ' sinifi icin ' . $periodLabel . ' (' . ($schedule->lesson_name ?: 'ders') . ') yoklamasi henuz alinmadi. ' . $reason . ', lutfen yoklamayi tamamlayin.'),
-                    route('attendance.index', ['date' => $today, 'schedule_id' => $schedule->id]),
+                    route('attendance.index', ['date' => $today, 'class_id' => $schedule->class_id, 'schedule_id' => $schedule->id]),
                     [
                         'notification_type' => 'attendance_reminder',
                         'target_type' => 'attendance_reminder',
