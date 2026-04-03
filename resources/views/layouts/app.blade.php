@@ -130,11 +130,10 @@
                                 <span style="display:block;width:22px;height:2px;background:#0f172a;border-radius:9999px;margin-top:5px;"></span>
                             </span>
                         </button>
-                        @isset($header)
-                            <div class="lms-page-title text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis min-w-0 [&_*]:whitespace-nowrap [&_*]:overflow-hidden [&_*]:text-ellipsis">{{ $header }}</div>
-                        @else
-                            <div class="lms-page-title text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis min-w-0">LMS Panel</div>
-                        @endisset
+                        <a href="{{ url('dashboard') }}" class="flex items-center gap-3 min-w-0">
+                            <img src="{{ asset('assets/logo.png') }}" alt="LMS Logo" class="h-10 w-10 rounded-lg bg-white p-1 border border-slate-200 object-contain">
+                            <div class="lms-page-title text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis min-w-0 font-semibold">ÖzelSİn LMS</div>
+                        </a>
                     </div>
 
                     <div class="flex items-center gap-2 shrink-0 ml-3 lms-header-actions">
