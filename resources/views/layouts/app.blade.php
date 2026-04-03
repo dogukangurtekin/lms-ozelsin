@@ -112,7 +112,13 @@
 
     <div x-data="{ sidebarOpen: false }" class="h-screen lms-bg text-slate-900 overflow-hidden lms-shell">
         <div class="flex h-screen min-w-0 overflow-hidden lms-shell-inner">
-            <aside class="hidden lg:flex w-72 flex-col border-r border-slate-200 bg-white/90 backdrop-blur" style="padding-top:calc(var(--app-header-height) * 0.40);">
+            <aside class="hidden lg:flex w-72 flex-col border-r border-slate-200 bg-white/90 backdrop-blur">
+                <div class="lms-sidebar-brand" style="margin-top:calc(var(--app-header-height) * 0.18);">
+                    <a href="{{ url('dashboard') }}" class="flex items-center gap-3 min-w-0">
+                        <img src="{{ asset('assets/logo.png') }}" alt="LMS Logo" class="h-10 w-10 rounded-lg bg-white p-1 border border-slate-200 object-contain">
+                        <div class="lms-page-title text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis min-w-0 font-semibold">ÖzelSİn LMS</div>
+                    </a>
+                </div>
                 @include('layouts.navigation')
             </aside>
 
@@ -130,7 +136,7 @@
                                 <span></span>
                             </span>
                         </button>
-                        <a href="{{ url('dashboard') }}" class="flex items-center gap-3 min-w-0">
+                        <a href="{{ url('dashboard') }}" class="flex items-center gap-3 min-w-0 lg:hidden">
                             <img src="{{ asset('assets/logo.png') }}" alt="LMS Logo" class="h-10 w-10 rounded-lg bg-white p-1 border border-slate-200 object-contain">
                             <div class="lms-page-title text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis min-w-0 font-semibold">ÖzelSİn LMS</div>
                         </a>

@@ -47,7 +47,7 @@
             </section>
         @endif
 
-        @if($selectedClassId > 0)
+        @if($selectedClassId > 0 && ! $selectedSchedule)
             <section class="rounded-2xl border border-slate-200 bg-white p-4">
                 <h3 class="font-semibold text-slate-800">1. Ogretmen Ders Programi</h3>
                 <p class="mt-1 text-sm text-slate-500">Ders kartina tiklayin, ardindan yoklama listesi acilsin.</p>
@@ -84,6 +84,15 @@
                 }
             @endphp
             <section class="rounded-2xl border border-slate-200 bg-white p-4" x-data="attendanceState()">
+                <div class="mb-3">
+                    <a
+                        href="{{ route('attendance.index', ['date' => $date, 'teacher_id' => request('teacher_id'), 'class_id' => $selectedClassId]) }}"
+                        class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                        Ders listesine geri don
+                    </a>
+                </div>
+
                 <div class="flex flex-wrap items-center gap-2">
                     <div>
                         <h3 class="font-semibold text-slate-800">2. Yoklama Listesi</h3>
@@ -104,6 +113,9 @@
                     @csrf
                     <input type="hidden" name="schedule_id" value="{{ $selectedSchedule->id }}">
                     <input type="hidden" name="attendance_date" value="{{ $date }}">
+                    @if(auth()->user()->hasRole('admin') && request('teacher_id'))
+                        <input type="hidden" name="teacher_id" value="{{ (int) request('teacher_id') }}">
+                    @endif
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                         @foreach($students as $student)
                             @php $status = $statusByStudentId[$student->id] ?? 'present'; @endphp

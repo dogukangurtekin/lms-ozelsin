@@ -181,6 +181,7 @@ class AttendanceController extends Controller
         $data = $request->validate([
             'schedule_id' => 'required|exists:teacher_schedules,id',
             'attendance_date' => 'required|date',
+            'teacher_id' => 'nullable|integer|exists:users,id',
             'statuses' => 'array',
             'statuses.*' => 'in:present,absent,excused,medical',
         ]);
@@ -212,6 +213,17 @@ class AttendanceController extends Controller
             );
         }
 
-        return back()->with('status', 'Yoklama kaydedildi.');
+        $redirectParams = [
+            'date' => $data['attendance_date'],
+            'class_id' => $schedule->class_id,
+        ];
+
+        if ($currentUser->hasRole('admin') && ! empty($data['teacher_id'])) {
+            $redirectParams['teacher_id'] = (int) $data['teacher_id'];
+        }
+
+        return redirect()
+            ->route('attendance.index', $redirectParams)
+            ->with('status', 'Yoklama kaydedildi.');
     }
 }
