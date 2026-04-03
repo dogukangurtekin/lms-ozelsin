@@ -349,6 +349,33 @@
                             </div>
                         </div>
                     </article>
+
+                    <article class="rounded-3xl border border-slate-200 p-5">
+                        <h4 class="text-lg font-semibold text-slate-900">Belge Şablonu Tasarım</h4>
+                        <p class="mt-1 text-xs text-slate-500">PDF üretiminde kullanılacak belge stilini ve ana renkleri seçin.</p>
+                        <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                            <div class="md:col-span-2 xl:col-span-1">
+                                <label class="mb-1 block text-sm text-slate-600">Şablon</label>
+                                <select name="exam_template" class="w-full rounded-xl border-slate-300">
+                                    <option value="modern" @selected(old('exam_template', 'modern') === 'modern')>Modern</option>
+                                    <option value="classic" @selected(old('exam_template') === 'classic')>Klasik</option>
+                                    <option value="minimal" @selected(old('exam_template') === 'minimal')>Minimal</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-sm text-slate-600">Ana Renk</label>
+                                <input type="color" name="theme_primary_color" value="{{ old('theme_primary_color', '#0f172a') }}" class="h-11 w-full rounded-xl border-slate-300 p-1">
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-sm text-slate-600">Vurgu Rengi</label>
+                                <input type="color" name="theme_accent_color" value="{{ old('theme_accent_color', '#1d4ed8') }}" class="h-11 w-full rounded-xl border-slate-300 p-1">
+                            </div>
+                            <div>
+                                <label class="mb-1 block text-sm text-slate-600">Çerçeve Rengi</label>
+                                <input type="color" name="theme_border_color" value="{{ old('theme_border_color', '#cbd5e1') }}" class="h-11 w-full rounded-xl border-slate-300 p-1">
+                            </div>
+                        </div>
+                    </article>
                     <div class="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 md:flex-row md:items-center md:justify-between">
                         <div>
                             <div class="text-sm font-semibold text-slate-800">Çıktılar</div>

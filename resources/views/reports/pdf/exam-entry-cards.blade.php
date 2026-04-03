@@ -3,7 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <title>Sınav Giriş Belgeleri</title>
+    @php
+        $template = in_array(($exam['template'] ?? 'modern'), ['modern', 'classic', 'minimal'], true) ? $exam['template'] : 'modern';
+        $theme = $exam['theme'] ?? [];
+        $primaryColor = preg_match('/^#[0-9A-Fa-f]{6}$/', (string) ($theme['primary'] ?? '')) ? $theme['primary'] : '#0f172a';
+        $accentColor = preg_match('/^#[0-9A-Fa-f]{6}$/', (string) ($theme['accent'] ?? '')) ? $theme['accent'] : '#1d4ed8';
+        $borderColor = preg_match('/^#[0-9A-Fa-f]{6}$/', (string) ($theme['border'] ?? '')) ? $theme['border'] : '#cbd5e1';
+    @endphp
     <style>
+        :root {
+            --primary-color: {{ $primaryColor }};
+            --accent-color: {{ $accentColor }};
+            --border-color: {{ $borderColor }};
+        }
         @page { margin: 12mm 10mm; }
         * { box-sizing: border-box; }
         body { font-family: DejaVu Sans, sans-serif; color: #0f172a; font-size: 11px; margin: 0; }
@@ -11,13 +23,21 @@
             page-break-after: always;
         }
         .card {
-            border: 1.8px solid #0f172a;
+            border: 1.8px solid var(--primary-color);
             border-radius: 18px;
             padding: 14px 16px 12px;
             background: #fff;
             height: 258mm;
             overflow: hidden;
             margin: 0;
+        }
+        .card.template-classic {
+            border-radius: 6px;
+            border-width: 2px;
+        }
+        .card.template-minimal {
+            border-width: 1.2px;
+            border-radius: 12px;
         }
 
         .logo-wrap {
@@ -66,10 +86,19 @@
             margin-left: auto;
             margin-right: auto;
             border-radius: 10px;
-            background: #0f172a;
+            background: var(--primary-color);
             color: #fff;
             text-align: center;
             padding: 8px 10px;
+        }
+        .card.template-classic .title-band {
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: 4px;
+        }
+        .card.template-minimal .title-band {
+            background: #f8fafc;
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
         }
         .title-band h1 { margin: 0; font-size: 15px; letter-spacing: 0.8px; }
 
@@ -78,7 +107,7 @@
             width: 88%;
             margin-left: auto;
             margin-right: auto;
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 8px 10px;
             background: #fff;
@@ -126,7 +155,7 @@
             font-size: 9.5px;
         }
         .session-table td, .session-table th {
-            border: 1px solid #cbd5e1;
+            border: 1px solid var(--border-color);
             padding: 4px 5px;
         }
         .session-title {
@@ -141,7 +170,7 @@
 
         .notes {
             margin-top: 8px;
-            border: 1px dashed #94a3b8;
+            border: 1px dashed var(--border-color);
             border-radius: 10px;
             padding: 8px 10px;
             background: #f8fafc;
@@ -169,7 +198,7 @@
 </head>
 <body>
 @foreach($placements as $placement)
-        <div class="card">
+        <div class="card template-{{ $template }}">
             <div class="logo-wrap">
                 <table class="logo-table">
                     <tr>

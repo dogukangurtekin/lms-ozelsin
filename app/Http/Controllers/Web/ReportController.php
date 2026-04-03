@@ -92,11 +92,11 @@ class ReportController extends Controller
             'student_number' => 'Numara',
             'name' => 'Ad Soyad',
             'email' => 'E-posta',
-            'class_name' => 'SÄ±nÄ±f',
+            'class_name' => 'SÃ„Â±nÃ„Â±f',
             'is_active' => 'Durum',
-            'total_submissions' => 'Teslim SayÄ±sÄ±',
+            'total_submissions' => 'Teslim SayÃ„Â±sÃ„Â±',
             'avg_score' => 'Ortalama Puan',
-            'birth_date' => 'DoÄŸum Tarihi',
+            'birth_date' => 'DoÃ„Å¸um Tarihi',
         ];
 
         $quickReportStats = [
@@ -219,6 +219,10 @@ class ReportController extends Controller
             'logo_payloads.*' => ['nullable', 'string', 'max:10485760'],
             'logo_files' => ['nullable', 'array'],
             'logo_files.*' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'exam_template' => ['nullable', 'in:modern,classic,minimal'],
+            'theme_primary_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'theme_accent_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'theme_border_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
         ]);
 
         $students = $this->extractStudentNamesFromRequest(
@@ -270,10 +274,16 @@ class ReportController extends Controller
             'school_name' => $data['school_name'] ?? config('app.name', 'Ozelsin'),
             'address' => $examAddress !== '' ? $examAddress : null,
             'notes' => $data['exam_notes'] ?? null,
-            'session_one_title' => $data['session_one_title'] ?? 'BİRİNCİ OTURUM - SÖZEL ALAN',
+            'session_one_title' => $data['session_one_title'] ?? 'BÄ°RÄ°NCÄ° OTURUM - SÃ–ZEL ALAN',
             'session_one_rows' => $sessionOneRows,
-            'session_two_title' => $data['session_two_title'] ?? 'İKİNCİ OTURUM - SAYISAL ALAN',
+            'session_two_title' => $data['session_two_title'] ?? 'Ä°KÄ°NCÄ° OTURUM - SAYISAL ALAN',
             'session_two_rows' => $sessionTwoRows,
+            'template' => $data['exam_template'] ?? 'modern',
+            'theme' => [
+                'primary' => $data['theme_primary_color'] ?? '#0f172a',
+                'accent' => $data['theme_accent_color'] ?? '#1d4ed8',
+                'border' => $data['theme_border_color'] ?? '#cbd5e1',
+            ],
         ];
 
         $safeName = 'sinav-giris-belgesi-'.now()->format('Ymd-His');
@@ -492,7 +502,7 @@ class ReportController extends Controller
         $zip->addFromString('docProps/core.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             .'<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
-            .'<dc:title>Sınav Oturma Planı</dc:title><dc:creator>lms-ozelsin</dc:creator></cp:coreProperties>'
+            .'<dc:title>SÄ±nav Oturma PlanÄ±</dc:title><dc:creator>lms-ozelsin</dc:creator></cp:coreProperties>'
         );
         $zip->addFromString('docProps/app.xml',
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -612,7 +622,7 @@ class ReportController extends Controller
             }
         }
 
-        // LOGO.pdf rasterize edilemezse (Imagick yoksa) ikinci logo yine boÅŸ kalmasÄ±n.
+        // LOGO.pdf rasterize edilemezse (Imagick yoksa) ikinci logo yine boÃ…Å¸ kalmasÃ„Â±n.
         if ($secondary === null) {
             $secondary = $primary;
         }
@@ -757,8 +767,8 @@ class ReportController extends Controller
             return '';
         }
         $value = str_replace(
-            ['Ä°', 'Ä±', 'Ã‡', 'Ã§', 'Ã–', 'Ã¶', 'Ãœ', 'Ã¼', 'Äž', 'ÄŸ', 'Åž', 'ÅŸ'],
-            ['İ', 'ı', 'Ç', 'ç', 'Ö', 'ö', 'Ü', 'ü', 'Ğ', 'ğ', 'Ş', 'ş'],
+            ['Ã„Â°', 'Ã„Â±', 'Ãƒâ€¡', 'ÃƒÂ§', 'Ãƒâ€“', 'ÃƒÂ¶', 'ÃƒÅ“', 'ÃƒÂ¼', 'Ã„Å¾', 'Ã„Å¸', 'Ã…Å¾', 'Ã…Å¸'],
+            ['Ä°', 'Ä±', 'Ã‡', 'Ã§', 'Ã–', 'Ã¶', 'Ãœ', 'Ã¼', 'Ä', 'ÄŸ', 'Å', 'ÅŸ'],
             $value
         );
         if (mb_check_encoding($value, 'UTF-8')) {
@@ -778,12 +788,12 @@ class ReportController extends Controller
             return $value;
         }
 
-        $repaired = preg_replace('/(?<=\p{Lu})\?(?=\p{Lu})/u', 'İ', $value);
+        $repaired = preg_replace('/(?<=\p{Lu})\?(?=\p{Lu})/u', 'Ä°', $value);
         if (is_string($repaired) && $repaired !== '') {
             return $repaired;
         }
 
-        return str_replace('?', 'İ', $value);
+        return str_replace('?', 'Ä°', $value);
     }
 
     private function renderExamPlacementPdfChunks(array $placements, array $exam, Carbon $generatedAt, ?string $logoDataUri, ?string $secondaryLogoDataUri): array
@@ -994,7 +1004,7 @@ class ReportController extends Controller
     {
         $h = preg_replace('/^\xEF\xBB\xBF/u', '', $header) ?? $header;
         $h = Str::lower(trim($this->normalizeUtf8Text($h)));
-        $h = str_replace(['Ã§', 'ÄŸ', 'Ä±', 'Ä°', 'Ã¶', 'ÅŸ', 'Ã¼'], ['c', 'g', 'i', 'i', 'o', 's', 'u'], $h);
+        $h = str_replace(['ÃƒÂ§', 'Ã„Å¸', 'Ã„Â±', 'Ã„Â°', 'ÃƒÂ¶', 'Ã…Å¸', 'ÃƒÂ¼'], ['c', 'g', 'i', 'i', 'o', 's', 'u'], $h);
         $h = str_replace([' ', '-', '/'], '_', $h);
         $h = preg_replace('/_+/', '_', $h) ?? $h;
 
@@ -1014,5 +1024,6 @@ class ReportController extends Controller
         return $normalized;
     }
 }
+
 
 
