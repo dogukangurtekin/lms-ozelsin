@@ -361,6 +361,8 @@
                                         <option value="modern" @selected(old('exam_template', 'modern') === 'modern')>Modern</option>
                                         <option value="classic" @selected(old('exam_template') === 'classic')>Klasik</option>
                                         <option value="minimal" @selected(old('exam_template') === 'minimal')>Minimal</option>
+                                        <option value="grid" @selected(old('exam_template') === 'grid')>Grid Kart</option>
+                                        <option value="premium" @selected(old('exam_template') === 'premium')>Premium</option>
                                     </select>
                                 </div>
                                 <div>
@@ -738,6 +740,16 @@
                     titleEl.style.color = '#ffffff';
                     titleEl.style.border = 'none';
                     cardEl.style.borderRadius = '0.6rem';
+                } else if (template === 'grid') {
+                    titleEl.style.background = accent;
+                    titleEl.style.color = '#ffffff';
+                    titleEl.style.border = `1px solid ${primary}`;
+                    cardEl.style.borderRadius = '0.85rem';
+                } else if (template === 'premium') {
+                    titleEl.style.background = `linear-gradient(110deg, ${primary}, ${accent})`;
+                    titleEl.style.color = '#ffffff';
+                    titleEl.style.border = 'none';
+                    cardEl.style.borderRadius = '1rem';
                 } else if (template === 'minimal') {
                     titleEl.style.background = '#f8fafc';
                     titleEl.style.color = primary;

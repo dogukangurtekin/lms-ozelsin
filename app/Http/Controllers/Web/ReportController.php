@@ -219,7 +219,7 @@ class ReportController extends Controller
             'logo_payloads.*' => ['nullable', 'string', 'max:10485760'],
             'logo_files' => ['nullable', 'array'],
             'logo_files.*' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-            'exam_template' => ['nullable', 'in:modern,classic,minimal'],
+            'exam_template' => ['nullable', 'in:modern,classic,minimal,grid,premium'],
             'theme_primary_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'theme_accent_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'theme_border_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],

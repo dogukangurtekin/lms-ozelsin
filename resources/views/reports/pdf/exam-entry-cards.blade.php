@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Sınav Giriş Belgeleri</title>
     @php
-        $template = in_array(($exam['template'] ?? 'modern'), ['modern', 'classic', 'minimal'], true) ? $exam['template'] : 'modern';
+        $template = in_array(($exam['template'] ?? 'modern'), ['modern', 'classic', 'minimal', 'grid', 'premium'], true) ? $exam['template'] : 'modern';
         $theme = $exam['theme'] ?? [];
         $primaryColor = preg_match('/^#[0-9A-Fa-f]{6}$/', (string) ($theme['primary'] ?? '')) ? $theme['primary'] : '#0f172a';
         $accentColor = preg_match('/^#[0-9A-Fa-f]{6}$/', (string) ($theme['accent'] ?? '')) ? $theme['accent'] : '#1d4ed8';
@@ -38,6 +38,16 @@
         .card.template-minimal {
             border-width: 1.2px;
             border-radius: 12px;
+        }
+        .card.template-grid {
+            border-width: 2px;
+            border-radius: 14px;
+            background: #fbfdff;
+        }
+        .card.template-premium {
+            border-width: 2.2px;
+            border-radius: 16px;
+            background: #ffffff;
         }
 
         .logo-wrap {
@@ -100,6 +110,17 @@
             color: var(--primary-color);
             border: 1px solid var(--border-color);
         }
+        .card.template-grid .title-band {
+            background: var(--accent-color);
+            color: #fff;
+            border: 1px solid var(--primary-color);
+            border-radius: 6px;
+        }
+        .card.template-premium .title-band {
+            background: linear-gradient(110deg, var(--primary-color), var(--accent-color));
+            color: #fff;
+            border-radius: 12px;
+        }
         .title-band h1 { margin: 0; font-size: 15px; letter-spacing: 0.8px; }
 
         .student-stack {
@@ -121,6 +142,26 @@
             text-align: center;
         }
         .info-row:last-child { border-bottom: none; }
+        .card.template-grid .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .card.template-grid .info-row {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 7px 5px;
+            border-bottom: 1px solid var(--border-color);
+            background: #fff;
+        }
+        .card.template-grid .info-row:last-child {
+            border-bottom: 1px solid var(--border-color);
+        }
+        .card.template-premium .info-row {
+            border-bottom: 1px solid var(--border-color);
+            border-left: 3px solid var(--accent-color);
+            padding-left: 8px;
+        }
         .stack-item {
             text-align: center;
         }
@@ -167,6 +208,20 @@
         }
         .session-head { background: #f8fafc; font-weight: 700; text-align: center; }
         .session-total td { font-weight: 700; background: #f8fafc; }
+        .card.template-grid .session-title {
+            background: var(--accent-color);
+            color: #fff;
+        }
+        .card.template-grid .session-head {
+            background: #eef6ff;
+        }
+        .card.template-premium .session-title {
+            background: linear-gradient(110deg, var(--primary-color), var(--accent-color));
+            color: #fff;
+        }
+        .card.template-premium .session-head {
+            background: #f1f5f9;
+        }
 
         .notes {
             margin-top: 8px;
