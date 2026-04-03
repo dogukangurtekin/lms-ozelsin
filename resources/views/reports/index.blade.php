@@ -647,11 +647,11 @@
                         .map((n) => `<option value="${n}" ${n === cap ? 'selected' : ''}>${n}</option>`)
                         .join('');
                     return `
-                        <div data-room-row data-room-name="${roomName.replace(/"/g, '&quot;')}" class="grid grid-cols-[1fr_82px_auto] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2 py-2">
-                            <input type="text" class="w-full rounded-lg border-slate-200 bg-white text-slate-700 text-sm" value="${roomName}" readonly>
-                            <select data-room-capacity-select class="w-full rounded-lg border-slate-300 text-right text-sm font-semibold text-slate-800 md:hidden">${options}</select>
-                            <input type="number" min="1" max="120" value="${cap}" data-room-capacity-input class="hidden w-full rounded-lg border-slate-300 text-right text-sm font-semibold text-slate-800 md:block">
-                            <button type="button" data-room-remove class="rounded-lg border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50">Sil</button>
+                        <div data-room-row data-room-name="${roomName.replace(/"/g, '&quot;')}" class="grid grid-cols-[minmax(0,1fr)_56px_46px] items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 overflow-hidden">
+                            <div class="truncate rounded-md bg-white px-2 py-1 text-xs font-semibold text-slate-700 border border-slate-200" title="${roomName.replace(/"/g, '&quot;')}">${roomName}</div>
+                            <select data-room-capacity-select class="w-full rounded-md border-slate-300 px-1 py-1 text-center text-xs font-semibold text-slate-800 md:hidden">${options}</select>
+                            <input type="number" min="1" max="120" value="${cap}" data-room-capacity-input class="hidden w-full rounded-md border-slate-300 px-1 py-1 text-center text-xs font-semibold text-slate-800 md:block">
+                            <button type="button" data-room-remove class="rounded-md border border-rose-200 px-1 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-50">Sil</button>
                         </div>
                     `;
                 }).join('');
