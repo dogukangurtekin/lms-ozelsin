@@ -27,7 +27,7 @@ return [
             'label' => 'Yoklama hatirlatmalari',
             'description' => 'Alinmayan yoklamalar icin otomatik hatirlatmalar.',
             'roles' => ['admin', 'teacher'],
-            'locked' => false,
+            'locked' => true,
             'default' => true,
         ],
         'parent_report_ready' => [
