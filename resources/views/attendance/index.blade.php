@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header"><h2 class="font-semibold text-xl">Yoklama Modulu</h2></x-slot>
 
     <div class="space-y-4" x-data>
@@ -23,15 +23,15 @@
                         <select name="teacher_id" class="w-full rounded-lg border-slate-300">
                             <option value="">Hepsi</option>
                             @foreach($teachers as $teacher)
-                                <option value="{{ $teacher->id }}" @selected((int)request('teacher_id') === $teacher->id)>{{ $teacher->name }}</option>
+                                <option value="{{ $teacher->id }}" @selected((int) request('teacher_id') === $teacher->id)>{{ $teacher->name }}</option>
                             @endforeach
                         </select>
                     </div>
                 @endif
                 <div>
-                    <label class="block text-sm text-slate-600 mb-1">Sınıf (1. Adım)</label>
+                    <label class="block text-sm text-slate-600 mb-1">Sinif</label>
                     <select name="class_id" class="w-full rounded-lg border-slate-300">
-                        <option value="">Sınıf seçin</option>
+                        <option value="">Sinif secin</option>
                         @foreach($classes as $class)
                             <option value="{{ $class->id }}" @selected($selectedClassId === $class->id)>{{ $class->name }}</option>
                         @endforeach
@@ -43,45 +43,34 @@
 
         @if($selectedClassId === 0)
             <section class="rounded-2xl border border-slate-200 bg-white p-4">
-                <h3 class="font-semibold text-slate-800">Sınıf Seçimi (1. Adım)</h3>
-                <p class="mt-1 text-sm text-slate-500">Önce sınıf seçin, sonra yoklama ekranı açılır.</p>
-                <div class="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                    @forelse($classes as $class)
-                        <a href="{{ route('attendance.index', ['date' => $date, 'teacher_id' => request('teacher_id'), 'class_id' => $class->id]) }}"
-                           class="rounded-xl border border-slate-200 bg-white p-3 hover:border-blue-300 hover:bg-blue-50 transition">
-                            <p class="font-semibold text-slate-800">{{ $class->name }}</p>
-                            <p class="text-xs text-slate-500 mt-1">Yoklama ekranını aç</p>
-                        </a>
-                    @empty
-                        <p class="text-sm text-slate-500">Bu gün için sınıf bulunamadı.</p>
-                    @endforelse
-                </div>
+                <p class="text-sm text-slate-500">Once sinif secin, sonra ogretmenin ders programi goruntulenecek.</p>
             </section>
         @endif
 
         @if($selectedClassId > 0)
-        <section class="rounded-2xl border border-slate-200 bg-white p-4">
-            <h3 class="font-semibold text-slate-800">Ogretmen Ders Programi</h3>
-            <div class="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                @forelse($schedules as $schedule)
-                    @php
-                        $scheduleSession = $sessionByScheduleId[$schedule->id] ?? null;
-                        $isTaken = $scheduleSession && $scheduleSession->taken_at;
-                    @endphp
-                    <a href="{{ route('attendance.index', ['date' => $date, 'teacher_id' => request('teacher_id'), 'schedule_id' => $schedule->id]) }}"
-                       class="rounded-xl border p-3 {{ $selectedSchedule && $selectedSchedule->id === $schedule->id ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white' }}">
-                        <p class="font-semibold text-slate-800">{{ $schedule->lesson?->name ?? $schedule->lesson_name }}</p>
-                        <p class="text-sm text-slate-500">{{ $schedule->class->name }} - {{ $schedule->teacher->name }}</p>
-                        <p class="text-xs text-slate-400 mt-1">{{ substr($schedule->start_time,0,5) }}{{ $schedule->end_time ? ' - '.substr($schedule->end_time,0,5) : '' }}</p>
-                        <p class="mt-2 text-xs font-medium {{ $isTaken ? 'text-emerald-600' : 'text-rose-600' }}">
-                            {{ $isTaken ? 'Yoklama alındı' : 'Kayıt yok' }}
-                        </p>
-                    </a>
-                @empty
-                    <p class="text-sm text-slate-500">Seçilen sınıf için bu gün aktif ders programı bulunamadı.</p>
-                @endforelse
-            </div>
-        </section>
+            <section class="rounded-2xl border border-slate-200 bg-white p-4">
+                <h3 class="font-semibold text-slate-800">1. Ogretmen Ders Programi</h3>
+                <p class="mt-1 text-sm text-slate-500">Ders kartina tiklayin, ardindan yoklama listesi acilsin.</p>
+                <div class="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                    @forelse($schedules as $schedule)
+                        @php
+                            $scheduleSession = $sessionByScheduleId[$schedule->id] ?? null;
+                            $isTaken = $scheduleSession && $scheduleSession->taken_at;
+                        @endphp
+                        <a href="{{ route('attendance.index', ['date' => $date, 'teacher_id' => request('teacher_id'), 'class_id' => $selectedClassId, 'schedule_id' => $schedule->id]) }}"
+                           class="rounded-xl border p-3 {{ $selectedSchedule && $selectedSchedule->id === $schedule->id ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white' }}">
+                            <p class="font-semibold text-slate-800">{{ $schedule->lesson?->name ?? $schedule->lesson_name }}</p>
+                            <p class="text-sm text-slate-500">{{ $schedule->class->name }} - {{ $schedule->teacher->name }}</p>
+                            <p class="text-xs text-slate-400 mt-1">{{ substr($schedule->start_time,0,5) }}{{ $schedule->end_time ? ' - '.substr($schedule->end_time,0,5) : '' }}</p>
+                            <p class="mt-2 text-xs font-medium {{ $isTaken ? 'text-emerald-600' : 'text-rose-600' }}">
+                                {{ $isTaken ? 'Yoklama alindi' : 'Kayit yok' }}
+                            </p>
+                        </a>
+                    @empty
+                        <p class="text-sm text-slate-500">Secilen sinif icin bugun aktif ders programi bulunamadi.</p>
+                    @endforelse
+                </div>
+            </section>
         @endif
 
         @if($selectedSchedule)
@@ -97,15 +86,16 @@
             <section class="rounded-2xl border border-slate-200 bg-white p-4" x-data="attendanceState()">
                 <div class="flex flex-wrap items-center gap-2">
                     <div>
-                        <h3 class="font-semibold text-slate-800">
+                        <h3 class="font-semibold text-slate-800">2. Yoklama Listesi</h3>
+                        <h4 class="mt-1 font-semibold text-slate-800">
                             {{ $selectedSchedule->class->name }} - {{ $selectedSchedule->lesson?->name ?? $selectedSchedule->lesson_name }} Yoklamasi
                             @if($isCurrentLesson)
-                                <span class="ml-2 inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2 py-0.5 text-xs font-semibold">Şu anki ders</span>
+                                <span class="ml-2 inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2 py-0.5 text-xs font-semibold">Su anki ders</span>
                             @endif
-                        </h3>
+                        </h4>
                         <p class="text-sm text-slate-500">Varsayilan durum: Geldi. Ogrenci kartina tiklayarak degistirebilirsin.</p>
                         <p class="text-xs mt-1 {{ $session && $session->taken_at ? 'text-emerald-600' : 'text-rose-600' }}">
-                            {{ $session && $session->taken_at ? 'Bu ders için yoklama kaydedildi.' : 'Bu ders için henüz kayıt yok.' }}
+                            {{ $session && $session->taken_at ? 'Bu ders icin yoklama kaydedildi.' : 'Bu ders icin henuz kayit yok.' }}
                         </p>
                     </div>
                 </div>

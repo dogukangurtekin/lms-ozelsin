@@ -40,7 +40,7 @@ function initThemeToggle() {
         const metaTheme = document.querySelector('meta[name="theme-color"]');
 
         if (metaTheme) {
-            metaTheme.setAttribute('content', theme === 'dark' ? '#020617' : '#0f172a');
+            metaTheme.setAttribute('content', theme === 'dark' ? '#374151' : '#0f172a');
         }
     };
 

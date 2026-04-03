@@ -25,22 +25,22 @@
 
     html.dark {
         color-scheme: dark;
-        --lms-bg-main: radial-gradient(circle at top right, #1e293b 0%, #0f172a 45%, #020617 100%);
-        --lms-bg-auth: linear-gradient(135deg, #020617 0%, #0f172a 38%, #111827 100%);
-        --lms-auth-side-bg: linear-gradient(160deg, #020617 0%, #0f766e 115%);
-        --lms-surface: rgba(15, 23, 42, 0.9);
-        --lms-surface-strong: #0f172a;
-        --lms-surface-muted: #111827;
-        --lms-border: #334155;
-        --lms-border-soft: #1e293b;
-        --lms-text: #e2e8f0;
-        --lms-text-soft: #cbd5e1;
-        --lms-text-muted: #94a3b8;
-        --lms-hover: rgba(51, 65, 85, 0.55);
-        --lms-shadow: 0 22px 50px rgba(2, 6, 23, 0.45);
-        --lms-input-bg: #0b1120;
-        --lms-header-button-bg: #111827;
-        --lms-header-button-text: #e2e8f0;
+        --lms-bg-main: radial-gradient(circle at top right, #4b5563 0%, #374151 35%, #1f2937 100%);
+        --lms-bg-auth: linear-gradient(135deg, #374151 0%, #2f3b4d 42%, #1f2937 100%);
+        --lms-auth-side-bg: linear-gradient(160deg, #374151 0%, #334155 60%, #1f2937 115%);
+        --lms-surface: rgba(51, 65, 85, 0.78);
+        --lms-surface-strong: #334155;
+        --lms-surface-muted: #3f4b5d;
+        --lms-border: #64748b;
+        --lms-border-soft: #73859d;
+        --lms-text: #f1f5f9;
+        --lms-text-soft: #e2e8f0;
+        --lms-text-muted: #cbd5e1;
+        --lms-hover: rgba(148, 163, 184, 0.24);
+        --lms-shadow: 0 20px 44px rgba(15, 23, 42, 0.24);
+        --lms-input-bg: #3b4759;
+        --lms-header-button-bg: #3a4658;
+        --lms-header-button-text: #f1f5f9;
     }
 
     html {
@@ -297,9 +297,9 @@
 }
 
 html.dark .lms-topbar {
-    background: #0b1220 !important;
-    border-bottom: 1px solid #334155 !important;
-    box-shadow: 0 10px 26px rgba(2, 6, 23, 0.55);
+    background: color-mix(in srgb, var(--lms-surface-strong) 92%, #1f2937 8%) !important;
+    border-bottom: 1px solid var(--lms-border-soft) !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.22);
 }
 
 html.dark .lms-page-title,
@@ -367,7 +367,7 @@ html.dark .bg-white.overflow-hidden {
 
 html.dark input::placeholder,
 html.dark textarea::placeholder {
-    color: #64748b;
+    color: #d1d9e6;
 }
 
 html.dark .stack-list-mobile tr {

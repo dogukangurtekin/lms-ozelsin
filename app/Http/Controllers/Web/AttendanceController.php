@@ -76,25 +76,7 @@ class AttendanceController extends Controller
         $selectedSchedule = null;
         if ($request->filled('schedule_id')) {
             $selectedSchedule = $schedules->firstWhere('id', (int) $request->input('schedule_id'));
-        } elseif ($date === now()->toDateString()) {
-            $nowTime = now()->format('H:i');
-            $selectedSchedule = $schedules
-                ->filter(function ($schedule) use ($nowTime) {
-                    $start = substr((string) $schedule->start_time, 0, 5);
-                    $end = $schedule->end_time ? substr((string) $schedule->end_time, 0, 5) : null;
-                    if (! $start) {
-                        return false;
-                    }
-                    if ($end) {
-                        return $start <= $nowTime && $nowTime <= $end;
-                    }
-                    return $start <= $nowTime;
-                })
-                ->sortByDesc('start_time')
-                ->first();
         }
-
-        $selectedSchedule = $selectedSchedule ?? $schedules->first();
 
         $students = collect();
         $statusByStudentId = [];
