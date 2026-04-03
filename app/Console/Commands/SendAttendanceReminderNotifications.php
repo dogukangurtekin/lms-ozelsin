@@ -44,24 +44,19 @@ class SendAttendanceReminderNotifications extends Command
                     $today.' '.substr((string) $schedule->start_time, 0, 8),
                     $tz
                 );
-
-                $nextStart = null;
-                $isPastNextLesson20Minutes = false;
-                if ($nextSchedule && ! empty($nextSchedule->start_time)) {
-                    $nextStart = Carbon::createFromFormat(
-                        'Y-m-d H:i:s',
-                        $today.' '.substr((string) $nextSchedule->start_time, 0, 8),
-                        $tz
-                    );
-                    $isPastNextLesson20Minutes = $now->greaterThanOrEqualTo($nextStart->copy()->addMinutes(20));
-                }
+                $isPastLessonStart20Minutes = $now->greaterThanOrEqualTo($lessonStart->copy()->addMinutes(20));
 
                 // Ders bitisi: end_time varsa onu kullan, yoksa sonraki ders baslangicindan 1 dk onceyi kullan.
                 // Son ders ve end_time yoksa varsayilan 40 dakika ders suresi varsayilir.
                 $lessonEnd = null;
                 if (! empty($schedule->end_time)) {
                     $lessonEnd = Carbon::createFromFormat('Y-m-d H:i:s', $today.' '.substr((string) $schedule->end_time, 0, 8), $tz);
-                } elseif ($nextStart) {
+                } elseif ($nextSchedule && ! empty($nextSchedule->start_time)) {
+                    $nextStart = Carbon::createFromFormat(
+                        'Y-m-d H:i:s',
+                        $today.' '.substr((string) $nextSchedule->start_time, 0, 8),
+                        $tz
+                    );
                     $lessonEnd = $nextStart->copy()->subMinute();
                 } else {
                     $lessonEnd = $lessonStart->copy()->addMinutes(40);
@@ -70,13 +65,10 @@ class SendAttendanceReminderNotifications extends Command
                 $reminderStart = $lessonEnd->copy()->subMinutes(5);
                 $isInLastFiveMinutes = $now->betweenIncluded($reminderStart, $lessonEnd);
 
-                // Son ders fallback: sonraki ders yoksa, ders bitiminden 20 dk sonra da bir kez hatirlat.
-                $isPastLessonEnd20Minutes = $nextSchedule ? false : $now->greaterThanOrEqualTo($lessonEnd->copy()->addMinutes(20));
-
-                // 1) Dersin son 5 dakikasi
-                // 2) Sonraki ders baslayip ilk 20 dk gecmis
-                // 3) Son dersse bitimden 20 dk gecmis
-                if (! $isInLastFiveMinutes && ! $isPastNextLesson20Minutes && ! $isPastLessonEnd20Minutes) {
+                // Tüm dersler için temel kural:
+                // Ders baslangicindan 20 dk sonra yoklama alinmadiysa bildirim.
+                // Son 5 dk penceresi de ekstra tetikleyici olarak korunur.
+                if (! $isPastLessonStart20Minutes && ! $isInLastFiveMinutes) {
                     continue;
                 }
 
@@ -102,9 +94,9 @@ class SendAttendanceReminderNotifications extends Command
                 }
 
                 $periodLabel = $schedule->period_no ? ($schedule->period_no.'. ders') : 'ilgili ders';
-                $reason = $isInLastFiveMinutes
-                    ? 'Dersin bitimine 5 dakikadan az kaldi'
-                    : ($isPastNextLesson20Minutes ? 'Sonraki dersin ilk 20 dakikasi da gecti' : 'Ders bitiminden 20 dakika gecti');
+                $reason = $isPastLessonStart20Minutes
+                    ? 'Ders baslangicindan 20 dakika gecti'
+                    : 'Dersin bitimine 5 dakikadan az kaldi';
 
                 $sent += $pushNotifications->sendToUsers(
                     [$schedule->teacher_id],
