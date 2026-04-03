@@ -119,8 +119,14 @@
         margin: 0;
         display: flex;
         align-items: center;
+        justify-content: center;
         border-bottom: 1px solid var(--lms-border-soft);
         flex-shrink: 0;
+    }
+
+    .lms-sidebar-brand > a {
+        width: 100%;
+        justify-content: center;
     }
 
     .lms-bg-auth {
