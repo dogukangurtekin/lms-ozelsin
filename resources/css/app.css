@@ -253,8 +253,21 @@
     height: 1.5rem;
     border-radius: 9999px;
     background: transparent;
-    color: currentColor;
+    color: var(--lms-header-button-text);
     flex-shrink: 0;
+    line-height: 0;
+}
+
+.lms-theme-toggle-icon svg {
+    display: block;
+    width: 1.12rem;
+    height: 1.12rem;
+    min-width: 1.12rem;
+    min-height: 1.12rem;
+    fill: currentColor;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: none;
 }
 
 .lms-theme-toggle-label {
