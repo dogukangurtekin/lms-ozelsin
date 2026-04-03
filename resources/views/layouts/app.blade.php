@@ -124,10 +124,10 @@
                             class="lg:hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white h-12 w-12 text-slate-700 shadow-sm hover:bg-slate-50 transition"
                             aria-label="Menüyü Aç"
                         >
-                            <span aria-hidden="true" style="display:inline-block;line-height:0;">
-                                <span style="display:block;width:22px;height:2px;background:#0f172a;border-radius:9999px;"></span>
-                                <span style="display:block;width:22px;height:2px;background:#0f172a;border-radius:9999px;margin-top:5px;"></span>
-                                <span style="display:block;width:22px;height:2px;background:#0f172a;border-radius:9999px;margin-top:5px;"></span>
+                            <span class="lms-mobile-menu-icon" aria-hidden="true">
+                                <span></span>
+                                <span></span>
+                                <span></span>
                             </span>
                         </button>
                         <a href="{{ url('dashboard') }}" class="flex items-center gap-3 min-w-0">

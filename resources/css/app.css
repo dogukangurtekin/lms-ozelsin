@@ -274,6 +274,22 @@
     display: none;
 }
 
+.lms-mobile-menu-icon {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    line-height: 0;
+}
+
+.lms-mobile-menu-icon > span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    border-radius: 9999px;
+    background: currentColor;
+}
+
 .lms-topbar {
     background: color-mix(in srgb, var(--lms-surface-strong) 88%, transparent) !important;
     border-bottom: 1px solid var(--lms-border-soft) !important;
