@@ -27,6 +27,10 @@
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        :root {
+            --app-safe-top: env(safe-area-inset-top, 0px);
+            --app-header-height: calc(64px + var(--app-safe-top));
+        }
         @media (max-width: 1024px) {
             .mobile-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
             body { overflow-y: auto !important; }
@@ -113,7 +117,7 @@
             </aside>
 
             <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden lms-shell-main">
-                <header class="fixed top-0 left-0 lg:left-72 right-0 z-30 lms-topbar bg-white/90 backdrop-blur border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 lg:px-8" style="height:64px;min-height:64px;max-height:64px;flex:0 0 64px;">
+                <header class="fixed top-0 left-0 lg:left-72 right-0 z-30 lms-topbar bg-white/90 backdrop-blur border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 lg:px-8" style="height:var(--app-header-height);min-height:var(--app-header-height);padding-top:var(--app-safe-top);box-sizing:border-box;">
                     <div class="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
                         <button
                             @click="sidebarOpen = true"
@@ -242,7 +246,7 @@
                     </div>
                 </header>
 
-                <main class="flex-1 px-3 sm:px-5 lg:px-8 pt-0 pb-32 sm:pb-12 lg:pb-8 overflow-y-auto overflow-x-hidden lms-main-content" style="margin-top:64px;">
+                <main class="flex-1 px-3 sm:px-5 lg:px-8 pt-0 pb-32 sm:pb-12 lg:pb-8 overflow-y-auto overflow-x-hidden lms-main-content" style="margin-top:var(--app-header-height);">
                     {{ $slot }}
                 </main>
             </div>
@@ -259,7 +263,7 @@
                 x-transition:leave-start="translate-x-0"
                 x-transition:leave-end="-translate-x-full"
                 class="absolute left-0 w-[86vw] max-w-72 bg-white border-r border-slate-200"
-                style="display:none; top: calc(64px + env(safe-area-inset-top)); height: calc(100% - (64px + env(safe-area-inset-top)));"
+                style="display:none; top: var(--app-header-height); height: calc(100% - var(--app-header-height));"
             >
                 @include('layouts.navigation')
             </aside>
