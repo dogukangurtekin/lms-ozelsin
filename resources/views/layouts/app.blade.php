@@ -112,11 +112,11 @@
 
     <div x-data="{ sidebarOpen: false }" class="h-screen lms-bg text-slate-900 overflow-hidden lms-shell">
         <div class="flex h-screen min-w-0 overflow-hidden lms-shell-inner">
-            <aside class="hidden lg:flex fixed left-0 w-72 flex-col border-r border-slate-200 bg-white/90 backdrop-blur z-20" style="top:var(--app-header-height);height:calc(100% - var(--app-header-height));">
+            <aside class="hidden lg:flex w-72 flex-col border-r border-slate-200 bg-white/90 backdrop-blur" style="padding-top:var(--app-header-height);">
                 @include('layouts.navigation')
             </aside>
 
-            <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden lms-shell-main lg:pl-72">
+            <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden lms-shell-main">
                 <header class="fixed top-0 left-0 lg:left-72 right-0 z-30 lms-topbar bg-white/90 backdrop-blur border-b border-slate-200 flex items-center justify-between px-3 sm:px-6 lg:px-8" style="height:var(--app-header-height);min-height:var(--app-header-height);padding-top:var(--app-safe-top);box-sizing:border-box;">
                     <div class="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
                         <button
