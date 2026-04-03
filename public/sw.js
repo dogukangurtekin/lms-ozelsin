@@ -11,8 +11,8 @@ self.addEventListener('push', (event) => {
 
     event.waitUntil(self.registration.showNotification(data.title || 'Yeni bildirim', {
         body: data.body || '',
-        icon: data.icon || 'assets/logo.png',
-        badge: data.badge || 'assets/logo.png',
+        icon: data.icon || 'assets/pwa-icon-192.png',
+        badge: data.badge || 'assets/pwa-icon-192.png',
         data: {
             url: data.url || self.registration.scope,
         },

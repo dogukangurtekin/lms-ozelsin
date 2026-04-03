@@ -10,16 +10,28 @@
     "description": "Ozelsin Egitim Sistemi mobil uygulama deneyimi",
     "icons": [
         {
-            "src": "assets/logo.png",
+            "src": "assets/pwa-icon-192.png",
             "sizes": "192x192",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "any"
         },
         {
-            "src": "assets/logo.png",
+            "src": "assets/pwa-icon-512.png",
             "sizes": "512x512",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "any"
+        },
+        {
+            "src": "assets/pwa-icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "assets/pwa-icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
         }
     ]
 }
