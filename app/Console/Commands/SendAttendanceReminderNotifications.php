@@ -32,6 +32,11 @@ class SendAttendanceReminderNotifications extends Command
             ->get();
 
         $sent = 0;
+        $byTeacher = $schedules
+            ->groupBy('teacher_id')
+            ->map(function ($rows) {
+                return $rows->sortBy(fn ($s) => (string) $s->start_time)->values();
+            });
 
         foreach ($schedules as $schedule) {
             $endTime = (string) $schedule->end_time;
@@ -41,9 +46,25 @@ class SendAttendanceReminderNotifications extends Command
 
             $lessonEnd = Carbon::createFromFormat('Y-m-d H:i:s', $today.' '.substr($endTime, 0, 8), $tz);
             $reminderStart = $lessonEnd->copy()->subMinutes(5);
+            $isInLastFiveMinutes = $now->betweenIncluded($reminderStart, $lessonEnd);
 
-            // Sadece dersin son 5 dakikasi icinde hatirlatma gonder.
-            if (! $now->betweenIncluded($reminderStart, $lessonEnd)) {
+            $teacherSchedules = $byTeacher->get($schedule->teacher_id, collect());
+            $currentIndex = $teacherSchedules->search(fn ($s) => (int) $s->id === (int) $schedule->id);
+            $nextSchedule = $currentIndex !== false ? $teacherSchedules->get($currentIndex + 1) : null;
+
+            $isPastNextLesson20Minutes = false;
+            if ($nextSchedule && ! empty($nextSchedule->start_time)) {
+                $nextStart = Carbon::createFromFormat(
+                    'Y-m-d H:i:s',
+                    $today.' '.substr((string) $nextSchedule->start_time, 0, 8),
+                    $tz
+                );
+                $isPastNextLesson20Minutes = $now->greaterThanOrEqualTo($nextStart->copy()->addMinutes(20));
+            }
+
+            // 1) Dersin son 5 dakikasi veya
+            // 2) Sonraki ders baslayip 20 dakika gecmis olmasi kosullarindan biri saglanmali.
+            if (! $isInLastFiveMinutes && ! $isPastNextLesson20Minutes) {
                 continue;
             }
 
@@ -68,10 +89,15 @@ class SendAttendanceReminderNotifications extends Command
                 continue;
             }
 
+            $periodLabel = $schedule->period_no ? ($schedule->period_no.'. ders') : 'ilgili ders';
+            $reason = $isInLastFiveMinutes
+                ? 'Dersin bitimine 5 dakikadan az kaldi'
+                : 'Sonraki dersin ilk 20 dakikasi da gecti';
+
             $sent += $pushNotifications->sendToUsers(
                 [$schedule->teacher_id],
                 'Yoklama hatirlatmasi',
-                (($schedule->class?->name ?? 'Sinif') . ' sinifi icin ' . ($schedule->lesson_name ?: 'ders') . ' yoklamasi henuz alinmadi. Dersin bitimine 5 dakikadan az kaldi, lutfen yoklamayi tamamlayin.'),
+                (($schedule->class?->name ?? 'Sinif') . ' sinifi icin ' . $periodLabel . ' (' . ($schedule->lesson_name ?: 'ders') . ') yoklamasi henuz alinmadi. ' . $reason . ', lutfen yoklamayi tamamlayin.'),
                 route('attendance.index', ['date' => $today, 'schedule_id' => $schedule->id]),
                 [
                     'notification_type' => 'attendance_reminder',
