@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\AttendanceSession;
+use App\Models\NotificationLog;
 use App\Models\TeacherSchedule;
 use App\Services\PushNotificationService;
 use Illuminate\Console\Command;
@@ -39,9 +40,9 @@ class SendAttendanceReminderNotifications extends Command
             }
 
             $lessonEnd = Carbon::createFromFormat('Y-m-d H:i:s', $today.' '.substr($endTime, 0, 8), $tz);
-            $reminderStart = $lessonEnd->copy()->subMinutes(10);
+            $reminderStart = $lessonEnd->copy()->subMinutes(5);
 
-            // Sadece dersin son 10 dakikasi icinde, dakika bazli hatirlatma gonder.
+            // Sadece dersin son 5 dakikasi icinde hatirlatma gonder.
             if (! $now->betweenIncluded($reminderStart, $lessonEnd)) {
                 continue;
             }
@@ -55,12 +56,30 @@ class SendAttendanceReminderNotifications extends Command
                 continue;
             }
 
+            // Ayni ders + ayni gun icin sadece 1 kez bildirim gonder.
+            $reminderKey = 'attendance_reminder:'.$today.':'.$schedule->id;
+            $alreadySent = NotificationLog::query()
+                ->where('channel', 'push')
+                ->where('target_type', 'attendance_reminder')
+                ->where('target_summary', $reminderKey)
+                ->exists();
+
+            if ($alreadySent) {
+                continue;
+            }
+
             $sent += $pushNotifications->sendToUsers(
                 [$schedule->teacher_id],
                 'Yoklama hatirlatmasi',
-                (($schedule->class?->name ?? 'Sinif') . ' sinifi icin ' . ($schedule->lesson_name ?: 'ders') . ' yoklamasi henuz alinmadi. Dersin bitimine 10 dakikadan az kaldi, lutfen yoklamayi tamamlayin.'),
+                (($schedule->class?->name ?? 'Sinif') . ' sinifi icin ' . ($schedule->lesson_name ?: 'ders') . ' yoklamasi henuz alinmadi. Dersin bitimine 5 dakikadan az kaldi, lutfen yoklamayi tamamlayin.'),
                 route('attendance.index', ['date' => $today, 'schedule_id' => $schedule->id]),
-                ['notification_type' => 'attendance_reminder']
+                [
+                    'notification_type' => 'attendance_reminder',
+                    'target_type' => 'attendance_reminder',
+                    'target_summary' => $reminderKey,
+                    'target_count' => 1,
+                    'user_id' => $schedule->teacher_id,
+                ]
             );
         }
 
