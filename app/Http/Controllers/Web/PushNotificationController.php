@@ -63,23 +63,26 @@ class PushNotificationController extends Controller
         $statusFilter = (string) $request->input('status', '');
         $search = trim((string) $request->input('q', ''));
         $failedOnly = $request->boolean('failed_only');
+        $hasLogFilter = $statusFilter !== '' || $search !== '' || $failedOnly;
 
         if ($isAdmin && Schema::hasTable('notification_logs')) {
-            $notificationLogs = NotificationLog::query()
-                ->with('user:id,name')
-                ->when($statusFilter !== '', fn ($query) => $query->where('status', $statusFilter))
-                ->when($failedOnly, fn ($query) => $query->whereIn('status', ['failed', 'partial', 'no_target']))
-                ->when($search !== '', function ($query) use ($search) {
-                    $query->where(function ($inner) use ($search) {
-                        $inner->where('title', 'like', "%{$search}%")
-                            ->orWhere('body', 'like', "%{$search}%")
-                            ->orWhere('target_summary', 'like', "%{$search}%")
-                            ->orWhere('error_message', 'like', "%{$search}%");
-                    });
-                })
-                ->latest('sent_at')
-                ->limit(50)
-                ->get();
+            if ($hasLogFilter) {
+                $notificationLogs = NotificationLog::query()
+                    ->with('user:id,name')
+                    ->when($statusFilter !== '', fn ($query) => $query->where('status', $statusFilter))
+                    ->when($failedOnly, fn ($query) => $query->whereIn('status', ['failed', 'partial', 'no_target']))
+                    ->when($search !== '', function ($query) use ($search) {
+                        $query->where(function ($inner) use ($search) {
+                            $inner->where('title', 'like', "%{$search}%")
+                                ->orWhere('body', 'like', "%{$search}%")
+                                ->orWhere('target_summary', 'like', "%{$search}%")
+                                ->orWhere('error_message', 'like', "%{$search}%");
+                        });
+                    })
+                    ->latest('sent_at')
+                    ->limit(100)
+                    ->get();
+            }
 
             $failedLogs = NotificationLog::query()
                 ->with('user:id,name')
@@ -103,6 +106,7 @@ class PushNotificationController extends Controller
             'statusFilter',
             'search',
             'failedOnly',
+            'hasLogFilter',
             'deviceStatuses',
             'notificationPreferenceDefinitions',
             'userNotificationPreferences',
@@ -329,6 +333,21 @@ class PushNotificationController extends Controller
         }
 
         return back()->with('success', 'Push bildirimi gonderildi.');
+    }
+
+    public function destroy(Request $request, NotificationLog $notificationLog): RedirectResponse
+    {
+        abort_unless($request->user()?->hasRole('admin'), 403);
+
+        if (Schema::hasTable('notification_log_reads')) {
+            NotificationLogRead::query()
+                ->where('notification_log_id', $notificationLog->id)
+                ->delete();
+        }
+
+        $notificationLog->delete();
+
+        return back()->with('success', 'Bildirim kaydı silindi.');
     }
 
     public function updateSettings(Request $request): RedirectResponse

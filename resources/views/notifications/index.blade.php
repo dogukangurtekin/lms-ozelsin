@@ -232,12 +232,21 @@
                                         <div class="text-xs text-slate-500">{{ optional($log->sent_at)->format('d.m.Y H:i') }} | {{ $log->status }}</div>
                                         <div class="mt-1 text-sm text-slate-600">{{ $log->error_message ?: 'Hata detayi yok.' }}</div>
                                     </div>
-                                    <form method="POST" action="{{ route('notifications.resend', $log) }}">
-                                        @csrf
-                                        <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700">
-                                            Tekrar Gonder
-                                        </button>
-                                    </form>
+                                    <div class="flex items-center gap-2">
+                                        <form method="POST" action="{{ route('notifications.resend', $log) }}">
+                                            @csrf
+                                            <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700">
+                                                Tekrar Gonder
+                                            </button>
+                                        </form>
+                                        <form method="POST" action="{{ route('notifications.destroy', $log) }}" onsubmit="return confirm('Bu bildirim kaydı silinsin mi?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50">
+                                                Sil
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
                         @empty
@@ -246,63 +255,78 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="lms-table">
-                        <thead>
-                            <tr>
-                                <th>Tarih</th>
-                                <th>Baslik</th>
-                                <th>Hedef</th>
-                                <th>Durum</th>
-                                <th>Basarili</th>
-                                <th>Hatali</th>
-                                <th>Detay</th>
-                                <th>Islem</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($notificationLogs as $log)
+                @if($hasLogFilter)
+                    <div class="overflow-x-auto">
+                        <table class="lms-table">
+                            <thead>
                                 <tr>
-                                    <td>{{ optional($log->sent_at)->format('d.m.Y H:i') }}</td>
-                                    <td>
-                                        <div class="font-medium text-slate-800">{{ $log->title }}</div>
-                                        <div class="text-xs text-slate-500">{{ $log->body }}</div>
-                                    </td>
-                                    <td>
-                                        <div>{{ $log->target_type ?: '-' }}</div>
-                                        <div class="text-xs text-slate-500">{{ $log->target_summary ?: '-' }}</div>
-                                    </td>
-                                    <td>
-                                        <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold
-                                            {{ $log->status === 'sent' ? 'bg-emerald-100 text-emerald-700' : '' }}
-                                            {{ $log->status === 'partial' ? 'bg-amber-100 text-amber-700' : '' }}
-                                            {{ $log->status === 'failed' || $log->status === 'no_target' ? 'bg-rose-100 text-rose-700' : '' }}">
-                                            {{ $log->status }}
-                                        </span>
-                                    </td>
-                                    <td>{{ $log->success_count }}</td>
-                                    <td>{{ $log->failed_count }}</td>
-                                    <td class="text-xs text-slate-500">
-                                        <div>Gonderen: {{ $log->user?->name ?? '-' }}</div>
-                                        <div>{{ $log->error_message ?: '-' }}</div>
-                                    </td>
-                                    <td>
-                                        <form method="POST" action="{{ route('notifications.resend', $log) }}">
-                                            @csrf
-                                            <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
-                                                Tekrar Gonder
-                                            </button>
-                                        </form>
-                                    </td>
+                                    <th>Tarih</th>
+                                    <th>Baslik</th>
+                                    <th>Hedef</th>
+                                    <th>Durum</th>
+                                    <th>Basarili</th>
+                                    <th>Hatali</th>
+                                    <th>Detay</th>
+                                    <th>Islem</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8">Bildirim kaydi bulunamadi.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                @forelse($notificationLogs as $log)
+                                    <tr>
+                                        <td>{{ optional($log->sent_at)->format('d.m.Y H:i') }}</td>
+                                        <td>
+                                            <div class="font-medium text-slate-800">{{ $log->title }}</div>
+                                            <div class="text-xs text-slate-500">{{ $log->body }}</div>
+                                        </td>
+                                        <td>
+                                            <div>{{ $log->target_type ?: '-' }}</div>
+                                            <div class="text-xs text-slate-500">{{ $log->target_summary ?: '-' }}</div>
+                                        </td>
+                                        <td>
+                                            <span class="inline-flex rounded-full px-2 py-1 text-xs font-semibold
+                                                {{ $log->status === 'sent' ? 'bg-emerald-100 text-emerald-700' : '' }}
+                                                {{ $log->status === 'partial' ? 'bg-amber-100 text-amber-700' : '' }}
+                                                {{ $log->status === 'failed' || $log->status === 'no_target' ? 'bg-rose-100 text-rose-700' : '' }}">
+                                                {{ $log->status }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $log->success_count }}</td>
+                                        <td>{{ $log->failed_count }}</td>
+                                        <td class="text-xs text-slate-500">
+                                            <div>Gonderen: {{ $log->user?->name ?? '-' }}</div>
+                                            <div>{{ $log->error_message ?: '-' }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="flex items-center gap-2">
+                                                <form method="POST" action="{{ route('notifications.resend', $log) }}">
+                                                    @csrf
+                                                    <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">
+                                                        Tekrar Gonder
+                                                    </button>
+                                                </form>
+                                                <form method="POST" action="{{ route('notifications.destroy', $log) }}" onsubmit="return confirm('Bu bildirim kaydı silinsin mi?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50">
+                                                        Sil
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="8">Filtreye uygun bildirim kaydi bulunamadi.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        Tüm bildirim listesi varsayılan olarak gizli. Üstte filtre seçip "Filtrele" dediğinizde listelenir.
+                    </div>
+                @endif
             </section>
         @endif
     </div>
