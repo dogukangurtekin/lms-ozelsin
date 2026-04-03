@@ -16,7 +16,8 @@ class SendAttendanceReminderNotifications extends Command
 
     public function handle(PushNotificationService $pushNotifications): int
     {
-        $now = now();
+        $tz = 'Europe/Istanbul';
+        $now = now($tz);
         $today = $now->toDateString();
         $dayOfWeek = (int) $now->dayOfWeekIso;
 
@@ -37,7 +38,7 @@ class SendAttendanceReminderNotifications extends Command
                 continue;
             }
 
-            $lessonEnd = Carbon::createFromFormat('Y-m-d H:i:s', $today.' '.substr($endTime, 0, 8));
+            $lessonEnd = Carbon::createFromFormat('Y-m-d H:i:s', $today.' '.substr($endTime, 0, 8), $tz);
             $reminderStart = $lessonEnd->copy()->subMinutes(10);
 
             // Sadece dersin son 10 dakikasi icinde, dakika bazli hatirlatma gonder.
