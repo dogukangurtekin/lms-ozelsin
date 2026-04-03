@@ -15,6 +15,8 @@ fi
 
 rm -rf "$APP_ROOT/build"
 cp -R "$PUBLIC_DIR/build" "$APP_ROOT/build"
+rm -rf "$APP_ROOT/assets"
+cp -R "$PUBLIC_DIR/assets" "$APP_ROOT/assets"
 
 for file in manifest.webmanifest sw.js robots.txt favicon.ico .htaccess; do
     if [ -f "$PUBLIC_DIR/$file" ]; then

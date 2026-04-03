@@ -1,4 +1,10 @@
 ﻿<div class="h-full flex flex-col overflow-y-auto">
+    <div class="lg:hidden px-4 pt-4 pb-2 border-b border-slate-200">
+        <a href="{{ url('dashboard') }}" class="flex items-center gap-3 min-w-0">
+            <img src="{{ asset('assets/logo.png') }}" alt="LMS Logo" class="h-10 w-10 rounded-lg bg-white p-1 border border-slate-200 object-contain">
+            <div class="lms-page-title text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis min-w-0 font-semibold">Özelsin Bilişim Sistemleri</div>
+        </a>
+    </div>
     <div class="px-4 py-4 text-xs uppercase tracking-wide text-slate-400">Navigasyon</div>
 
     <nav class="px-3 space-y-1 text-sm">
@@ -52,3 +58,4 @@
         @endif
     </nav>
 </div>
+

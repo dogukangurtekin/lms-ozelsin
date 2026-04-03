@@ -136,10 +136,6 @@
                                 <span></span>
                             </span>
                         </button>
-                        <a href="{{ url('dashboard') }}" class="flex items-center gap-3 min-w-0 lg:hidden">
-                            <img src="{{ asset('assets/logo.png') }}" alt="LMS Logo" class="h-10 w-10 rounded-lg bg-white p-1 border border-slate-200 object-contain">
-                            <div class="lms-page-title text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis min-w-0 font-semibold">Özelsin Bilişim Sistemleri</div>
-                        </a>
                     </div>
 
                     <div class="flex items-center gap-2 shrink-0 ml-3 lms-header-actions">
@@ -268,7 +264,7 @@
                 x-transition:leave-start="translate-x-0"
                 x-transition:leave-end="-translate-x-full"
                 class="absolute left-0 w-[86vw] max-w-72 bg-white border-r border-slate-200"
-                style="display:none; top: var(--app-header-height); height: calc(100% - var(--app-header-height));"
+                style="display:none; top: 0; height: 100%;"
             >
                 @include('layouts.navigation')
             </aside>
