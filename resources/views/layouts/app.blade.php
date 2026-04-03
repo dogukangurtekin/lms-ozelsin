@@ -112,7 +112,7 @@
 
     <div x-data="{ sidebarOpen: false }" class="h-screen lms-bg text-slate-900 overflow-hidden lms-shell">
         <div class="flex h-screen min-w-0 overflow-hidden lms-shell-inner">
-            <aside class="hidden lg:flex w-72 flex-col border-r border-slate-200 bg-white/90 backdrop-blur" style="padding-top:var(--app-header-height);">
+            <aside class="hidden lg:flex w-72 flex-col border-r border-slate-200 bg-white/90 backdrop-blur" style="padding-top:calc(var(--app-header-height) * 0.25);">
                 @include('layouts.navigation')
             </aside>
 
