@@ -12,7 +12,7 @@
         @endif
 
         <section class="rounded-2xl border border-slate-200 bg-white p-4">
-            <form method="GET" action="{{ route('attendance.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+            <form method="GET" action="{{ route('attendance.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
                 <div>
                     <label class="block text-sm text-slate-600 mb-1">Tarih</label>
                     <input type="date" name="date" value="{{ $date }}" class="w-full rounded-lg border-slate-300">
@@ -28,10 +28,38 @@
                         </select>
                     </div>
                 @endif
+                <div>
+                    <label class="block text-sm text-slate-600 mb-1">Sınıf (1. Adım)</label>
+                    <select name="class_id" class="w-full rounded-lg border-slate-300">
+                        <option value="">Sınıf seçin</option>
+                        @foreach($classes as $class)
+                            <option value="{{ $class->id }}" @selected($selectedClassId === $class->id)>{{ $class->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <button class="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm">Programi Getir</button>
             </form>
         </section>
 
+        @if($selectedClassId === 0)
+            <section class="rounded-2xl border border-slate-200 bg-white p-4">
+                <h3 class="font-semibold text-slate-800">Sınıf Seçimi (1. Adım)</h3>
+                <p class="mt-1 text-sm text-slate-500">Önce sınıf seçin, sonra yoklama ekranı açılır.</p>
+                <div class="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                    @forelse($classes as $class)
+                        <a href="{{ route('attendance.index', ['date' => $date, 'teacher_id' => request('teacher_id'), 'class_id' => $class->id]) }}"
+                           class="rounded-xl border border-slate-200 bg-white p-3 hover:border-blue-300 hover:bg-blue-50 transition">
+                            <p class="font-semibold text-slate-800">{{ $class->name }}</p>
+                            <p class="text-xs text-slate-500 mt-1">Yoklama ekranını aç</p>
+                        </a>
+                    @empty
+                        <p class="text-sm text-slate-500">Bu gün için sınıf bulunamadı.</p>
+                    @endforelse
+                </div>
+            </section>
+        @endif
+
+        @if($selectedClassId > 0)
         <section class="rounded-2xl border border-slate-200 bg-white p-4">
             <h3 class="font-semibold text-slate-800">Ogretmen Ders Programi</h3>
             <div class="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -50,10 +78,11 @@
                         </p>
                     </a>
                 @empty
-                    <p class="text-sm text-slate-500">Bu gun icin aktif ders programi bulunamadi.</p>
+                    <p class="text-sm text-slate-500">Seçilen sınıf için bu gün aktif ders programı bulunamadı.</p>
                 @endforelse
             </div>
         </section>
+        @endif
 
         @if($selectedSchedule)
             @php

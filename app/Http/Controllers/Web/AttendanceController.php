@@ -18,19 +18,34 @@ class AttendanceController extends Controller
     public function index(Request $request)
     {
         $date = $request->input('date', now()->toDateString());
+        $selectedClassId = (int) $request->input('class_id', 0);
         $dayOfWeek = (int) Carbon::parse($date)->dayOfWeekIso;
         $currentUser = auth()->user();
 
-        $scheduleQuery = TeacherSchedule::query()
+        $baseScheduleQuery = TeacherSchedule::query()
             ->with('teacher:id,name', 'class:id,name,grade_level,section', 'lesson:id,name')
             ->where('is_active', true)
             ->where('day_of_week', $dayOfWeek)
             ->orderBy('start_time');
 
         if (! $currentUser->hasRole('admin')) {
-            $scheduleQuery->where('teacher_id', $currentUser->id);
+            $baseScheduleQuery->where('teacher_id', $currentUser->id);
         } elseif ($request->filled('teacher_id')) {
-            $scheduleQuery->where('teacher_id', $request->integer('teacher_id'));
+            $baseScheduleQuery->where('teacher_id', $request->integer('teacher_id'));
+        }
+
+        $classIdsForDay = (clone $baseScheduleQuery)
+            ->select('class_id')
+            ->distinct()
+            ->pluck('class_id')
+            ->filter()
+            ->values();
+
+        $scheduleQuery = (clone $baseScheduleQuery);
+        if ($selectedClassId > 0) {
+            $scheduleQuery->where('class_id', $selectedClassId);
+        } else {
+            $scheduleQuery->whereRaw('1=0');
         }
 
         $schedules = $scheduleQuery->get();
@@ -110,11 +125,16 @@ class AttendanceController extends Controller
             ->select('id', 'name')
             ->orderBy('name')
             ->get();
-        $classes = SchoolClass::query()->select('id', 'name')->orderBy('name')->get();
+        $classes = SchoolClass::query()
+            ->select('id', 'name')
+            ->whereIn('id', $classIdsForDay->all())
+            ->orderBy('name')
+            ->get();
         $lessons = Lesson::query()->where('is_active', true)->select('id', 'name')->orderBy('name')->get();
 
         return view('attendance.index', compact(
             'date',
+            'selectedClassId',
             'dayOfWeek',
             'schedules',
             'selectedSchedule',
