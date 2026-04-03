@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
@@ -116,7 +116,7 @@
                 <div class="lms-sidebar-brand" style="margin-top:calc(var(--app-header-height) * 0.18);">
                     <a href="{{ url('dashboard') }}" class="flex items-center gap-3 min-w-0">
                         <img src="{{ asset('assets/logo.png') }}" alt="LMS Logo" class="h-10 w-10 rounded-lg bg-white p-1 border border-slate-200 object-contain">
-                        <div class="lms-page-title text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis min-w-0 font-semibold">Özelsin Bilişim Sistemleri</div>
+                        <div class="lms-page-title text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis min-w-0 font-semibold">Ãƒâ€“zelsin BiliÃ…Å¸im Sistemleri</div>
                     </a>
                 </div>
                 @include('layouts.navigation')
@@ -128,7 +128,7 @@
                         <button
                             @click="sidebarOpen = true"
                             class="lg:hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white h-12 w-12 text-slate-700 shadow-sm hover:bg-slate-50 transition"
-                            aria-label="MenÃ¼yÃ¼ AÃ§"
+                            aria-label="MenÃƒÆ’Ã‚Â¼yÃƒÆ’Ã‚Â¼ AÃƒÆ’Ã‚Â§"
                         >
                             <span class="lms-mobile-menu-icon" aria-hidden="true">
                                 <span></span>
@@ -231,7 +231,7 @@
                                     @click="userMenuOpen = !userMenuOpen"
                                     class="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700">
                                 <span class="lms-user-name">{{ auth()->user()->name }}</span>
-                                <span class="text-xs">â–¼</span>
+                                <span class="text-xs">&#9662;</span>
                             </button>
                             <div x-show="userMenuOpen"
                                  @click.outside="userMenuOpen = false"
@@ -240,7 +240,7 @@
                                 <a href="{{ route('profile.edit') }}" class="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Profil</a>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
-                                    <button class="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50">Ã‡Ä±kÄ±ÅŸ Yap</button>
+                                    <button class="w-full text-left px-3 py-2 text-sm text-rose-600 hover:bg-rose-50">Çıkış Yap</button>
                                 </form>
                             </div>
                         </div>
@@ -298,10 +298,10 @@
 
                 <div class="mt-6 max-w-xl space-y-4">
                     <p class="text-base leading-8 text-slate-700 sm:text-[1.7rem] sm:leading-[2.7rem]">
-                        Onay talepleri, yÃ¶netici mesajlarÄ± ve sistem uyarÄ±larÄ±nÄ± anlÄ±k almak iÃ§in tarayÄ±cÄ± bildirimi izni verebilirsiniz.
+                        Onay talepleri, yÃƒÆ’Ã‚Â¶netici mesajlarÃƒâ€Ã‚Â± ve sistem uyarÃƒâ€Ã‚Â±larÃƒâ€Ã‚Â±nÃƒâ€Ã‚Â± anlÃƒâ€Ã‚Â±k almak iÃƒÆ’Ã‚Â§in tarayÃƒâ€Ã‚Â±cÃƒâ€Ã‚Â± bildirimi izni verebilirsiniz.
                     </p>
                     <p class="text-sm leading-7 text-slate-500 sm:text-[1.35rem] sm:leading-[2.25rem]">
-                        Ä°zin verirseniz bu cihaz ve tarayÄ±cÄ± iÃ§in abonelik oluÅŸturulur. Daha sonra kullanÄ±cÄ± menÃ¼sÃ¼nden test bildirimi de gÃ¶nderebilirsiniz.
+                        Ãƒâ€Ã‚Â°zin verirseniz bu cihaz ve tarayÃƒâ€Ã‚Â±cÃƒâ€Ã‚Â± iÃƒÆ’Ã‚Â§in abonelik oluÃƒâ€¦Ã…Â¸turulur. Daha sonra kullanÃƒâ€Ã‚Â±cÃƒâ€Ã‚Â± menÃƒÆ’Ã‚Â¼sÃƒÆ’Ã‚Â¼nden test bildirimi de gÃƒÆ’Ã‚Â¶nderebilirsiniz.
                     </p>
                     <div
                         data-push-prompt-status
@@ -315,7 +315,7 @@
                         data-push-prompt-never
                         class="h-5 w-5 rounded-md border-slate-300 text-sky-600 focus:ring-sky-500"
                     >
-                    <span>Bir daha hatÄ±rlatma</span>
+                    <span>Bir daha hatÃƒâ€Ã‚Â±rlatma</span>
                 </label>
 
                 <div class="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
@@ -324,7 +324,7 @@
                         data-push-prompt-later
                         class="inline-flex items-center justify-center rounded-2xl bg-slate-100 px-5 py-2.5 text-base font-medium text-slate-700 transition hover:bg-slate-200"
                     >
-                        Åimdi DeÄŸil
+                        Ãƒâ€¦Ã‚Âimdi DeÃƒâ€Ã…Â¸il
                     </button>
                     <button
                         type="button"
@@ -334,7 +334,7 @@
                         <svg viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="currentColor" aria-hidden="true">
                             <path d="M12 2a6 6 0 0 0-6 6v3.764l-1.447 2.894A1 1 0 0 0 5.447 16h13.106a1 1 0 0 0 .894-1.447L18 11.764V8a6 6 0 0 0-6-6Zm0 20a3 3 0 0 0 2.816-2H9.184A3 3 0 0 0 12 22Z" />
                         </svg>
-                        Ä°zin Ver
+                        Ãƒâ€Ã‚Â°zin Ver
                     </button>
                 </div>
             </div>
