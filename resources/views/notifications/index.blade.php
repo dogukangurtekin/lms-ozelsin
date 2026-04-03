@@ -124,11 +124,39 @@
                             <input type="url" name="url" value="{{ old('url', route('dashboard')) }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
                         </div>
                         <div>
+                            <label class="mb-1 block text-sm font-medium text-slate-700">Bildirim Tipi</label>
+                            <select name="notification_type" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                                <option value="system_message">Sistem İçi</option>
+                                <option value="attendance_reminder">Yoklama Hatırlatma</option>
+                                <option value="meeting_created">Görüşme</option>
+                                <option value="assignment_created">Ödev</option>
+                            </select>
+                        </div>
+                        <div>
                             <label class="mb-1 block text-sm font-medium text-slate-700">Hedef</label>
-                            <select name="audience" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                            <select name="audience" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" data-audience-select>
                                 <option value="self">Sadece benim cihazlarim</option>
                                 <option value="all">Tum kullanicilarin cihazlari</option>
+                                <option value="role">Sadece rol bazli</option>
+                                <option value="users">Sistem ici ozel kullanicilar</option>
                             </select>
+                        </div>
+                        <div class="hidden" data-role-target-wrap>
+                            <label class="mb-1 block text-sm font-medium text-slate-700">Rol Hedefi</label>
+                            <select name="role_name" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                                @foreach(($roleOptions ?? []) as $roleName)
+                                    <option value="{{ $roleName }}">{{ ucfirst($roleName) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="hidden" data-users-target-wrap>
+                            <label class="mb-1 block text-sm font-medium text-slate-700">Özel Kullanıcılar</label>
+                            <select name="user_ids[]" multiple class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm min-h-[120px]">
+                                @foreach(($usersForTargeting ?? collect()) as $u)
+                                    <option value="{{ $u->id }}">{{ $u->name }}</option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-slate-500">Ctrl/Cmd ile çoklu seçim yapabilirsiniz.</p>
                         </div>
                         <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
                             Bildirim Gonder
@@ -137,6 +165,29 @@
                 </article>
             @endif
         </section>
+
+        @if(auth()->user()?->hasRole('admin'))
+            <section class="lms-panel">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="lms-panel-title">Bildirim Yönetim Ayarları</h3>
+                </div>
+                <form method="POST" action="{{ route('notifications.settings.update') }}" class="grid gap-4 md:grid-cols-3">
+                    @csrf
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">Yoklama Bildirim Süresi (dk)</label>
+                        <input type="number" min="1" max="180" name="attendance_reminder_after_start_minutes" value="{{ (int) ($advancedNotificationSettings['attendance_reminder_after_start_minutes'] ?? 20) }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                    </div>
+                    <label class="inline-flex items-center gap-2 pt-7 text-sm text-slate-700">
+                        <input type="hidden" name="attendance_last_five_enabled" value="0">
+                        <input type="checkbox" name="attendance_last_five_enabled" value="1" @checked((bool) ($advancedNotificationSettings['attendance_last_five_enabled'] ?? true)) class="rounded border-slate-300">
+                        Son 5 dakika hatırlatması da açık olsun
+                    </label>
+                    <div class="flex items-end">
+                        <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Ayarları Kaydet</button>
+                    </div>
+                </form>
+            </section>
+        @endif
 
         @if(auth()->user()?->hasRole('admin'))
         <section class="lms-panel overflow-x-hidden">
@@ -376,4 +427,19 @@
 
         <div data-pwa-install-dialog-body class="px-4 py-5 sm:px-6"></div>
     </dialog>
+    <script>
+        document.querySelectorAll('form[action="{{ route('push.send') }}"]').forEach((form) => {
+            const audienceSelect = form.querySelector('[data-audience-select]');
+            const roleWrap = form.querySelector('[data-role-target-wrap]');
+            const usersWrap = form.querySelector('[data-users-target-wrap]');
+            if (!audienceSelect || !roleWrap || !usersWrap) return;
+            const sync = () => {
+                const v = String(audienceSelect.value || '');
+                roleWrap.classList.toggle('hidden', v !== 'role');
+                usersWrap.classList.toggle('hidden', v !== 'users');
+            };
+            audienceSelect.addEventListener('change', sync);
+            sync();
+        });
+    </script>
 </x-app-layout>

@@ -8,10 +8,12 @@ use App\Models\NotificationLogRead;
 use App\Models\NotificationPreference;
 use App\Models\PushDeviceStatus;
 use App\Models\PushSubscription as PushSubscriptionModel;
+use App\Models\User;
 use App\Services\PushNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
@@ -31,6 +33,12 @@ class PushNotificationController extends Controller
         $notificationPreferenceDefinitions = $this->preferenceDefinitionsFor($user);
         $userNotificationPreferences = collect();
         $deviceStatuses = collect();
+        $advancedNotificationSettings = [
+            'attendance_reminder_after_start_minutes' => (int) Cache::get('notification_settings.attendance_reminder_after_start_minutes', 20),
+            'attendance_last_five_enabled' => (bool) Cache::get('notification_settings.attendance_last_five_enabled', true),
+        ];
+        $usersForTargeting = collect();
+        $roleOptions = ['admin', 'teacher', 'student', 'parent'];
 
         if (Schema::hasTable('push_subscriptions')) {
             $pushSubscriptionCount = PushSubscriptionModel::query()
@@ -80,6 +88,13 @@ class PushNotificationController extends Controller
                 ->limit(20)
                 ->get();
         }
+        if ($isAdmin) {
+            $usersForTargeting = User::query()
+                ->select('id', 'name')
+                ->orderBy('name')
+                ->limit(250)
+                ->get();
+        }
 
         return view('notifications.index', compact(
             'pushSubscriptionCount',
@@ -90,7 +105,10 @@ class PushNotificationController extends Controller
             'failedOnly',
             'deviceStatuses',
             'notificationPreferenceDefinitions',
-            'userNotificationPreferences'
+            'userNotificationPreferences',
+            'advancedNotificationSettings',
+            'usersForTargeting',
+            'roleOptions'
         ));
     }
 
@@ -250,23 +268,59 @@ class PushNotificationController extends Controller
             'title' => ['required', 'string', 'max:120'],
             'body' => ['required', 'string', 'max:240'],
             'url' => ['nullable', 'url', 'max:500'],
-            'audience' => ['required', 'in:self,all'],
+            'notification_type' => ['required', 'string', 'max:80'],
+            'audience' => ['required', 'in:self,all,role,users'],
+            'role_name' => ['nullable', 'in:admin,teacher,student,parent'],
+            'user_ids' => ['nullable', 'array'],
+            'user_ids.*' => ['integer', 'exists:users,id'],
         ]);
 
-        $sentCount = $validated['audience'] === 'self'
-            ? $this->pushNotifications->sendToUsers(
+        $meta = ['notification_type' => $validated['notification_type']];
+        $audience = $validated['audience'];
+        if ($audience === 'self') {
+            $sentCount = $this->pushNotifications->sendToUsers(
                 [$request->user()->id],
                 $validated['title'],
                 $validated['body'],
                 $validated['url'] ?? route('dashboard'),
-                ['notification_type' => 'system_message']
-            )
-            : $this->pushNotifications->sendToAll(
+                $meta
+            );
+        } elseif ($audience === 'all') {
+            $sentCount = $this->pushNotifications->sendToAll(
                 $validated['title'],
                 $validated['body'],
                 $validated['url'] ?? route('dashboard'),
-                ['notification_type' => 'system_message']
+                $meta
             );
+        } elseif ($audience === 'role') {
+            $roleName = (string) ($validated['role_name'] ?? '');
+            $targetIds = User::query()
+                ->whereHas('roles', fn ($q) => $q->where('name', $roleName))
+                ->pluck('id')
+                ->all();
+            $meta['target_type'] = 'role';
+            $meta['target_summary'] = 'role:'.$roleName;
+            $meta['target_count'] = count($targetIds);
+            $sentCount = $this->pushNotifications->sendToUsers(
+                $targetIds,
+                $validated['title'],
+                $validated['body'],
+                $validated['url'] ?? route('dashboard'),
+                $meta
+            );
+        } else {
+            $targetIds = collect($validated['user_ids'] ?? [])->map(fn ($id) => (int) $id)->filter()->unique()->values()->all();
+            $meta['target_type'] = 'users';
+            $meta['target_summary'] = 'user_ids:'.implode(',', $targetIds);
+            $meta['target_count'] = count($targetIds);
+            $sentCount = $this->pushNotifications->sendToUsers(
+                $targetIds,
+                $validated['title'],
+                $validated['body'],
+                $validated['url'] ?? route('dashboard'),
+                $meta
+            );
+        }
 
         if ($sentCount === 0) {
             throw ValidationException::withMessages([
@@ -275,6 +329,21 @@ class PushNotificationController extends Controller
         }
 
         return back()->with('success', 'Push bildirimi gonderildi.');
+    }
+
+    public function updateSettings(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()?->hasRole('admin'), 403);
+
+        $validated = $request->validate([
+            'attendance_reminder_after_start_minutes' => ['required', 'integer', 'min:1', 'max:180'],
+            'attendance_last_five_enabled' => ['nullable', 'in:0,1'],
+        ]);
+
+        Cache::forever('notification_settings.attendance_reminder_after_start_minutes', (int) $validated['attendance_reminder_after_start_minutes']);
+        Cache::forever('notification_settings.attendance_last_five_enabled', $request->boolean('attendance_last_five_enabled'));
+
+        return back()->with('success', 'Bildirim yönetim ayarları güncellendi.');
     }
 
     public function resend(Request $request, NotificationLog $notificationLog): RedirectResponse

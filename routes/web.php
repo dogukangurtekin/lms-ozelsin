@@ -30,6 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/webpush/subscribe', [PushNotificationController::class, 'subscribe'])->name('push.subscribe');
     Route::delete('/webpush/unsubscribe', [PushNotificationController::class, 'unsubscribe'])->name('push.unsubscribe');
     Route::post('/webpush/send', [PushNotificationController::class, 'send'])->name('push.send')->middleware('role:admin')->middleware('module:dashboard');
+    Route::post('/app-notifications/settings', [PushNotificationController::class, 'updateSettings'])->name('notifications.settings.update')->middleware('role:admin')->middleware('module:dashboard');
     Route::post('/app-notifications/{notificationLog}/resend', [PushNotificationController::class, 'resend'])->name('notifications.resend')->middleware('role:admin')->middleware('module:dashboard');
 
     Route::get('books/create', [BookController::class, 'create'])->name('books.create')->middleware('role:admin,teacher')->middleware('module:books');

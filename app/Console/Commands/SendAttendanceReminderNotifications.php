@@ -8,6 +8,7 @@ use App\Models\TeacherSchedule;
 use App\Services\PushNotificationService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class SendAttendanceReminderNotifications extends Command
 {
@@ -18,6 +19,9 @@ class SendAttendanceReminderNotifications extends Command
     public function handle(PushNotificationService $pushNotifications): int
     {
         $tz = 'Europe/Istanbul';
+        $afterStartMinutes = (int) Cache::get('notification_settings.attendance_reminder_after_start_minutes', 20);
+        $afterStartMinutes = max(1, min(180, $afterStartMinutes));
+        $lastFiveEnabled = (bool) Cache::get('notification_settings.attendance_last_five_enabled', true);
         $now = now($tz);
         $today = $now->toDateString();
         $dayOfWeek = (int) $now->dayOfWeekIso;
@@ -44,7 +48,7 @@ class SendAttendanceReminderNotifications extends Command
                     $today.' '.substr((string) $schedule->start_time, 0, 8),
                     $tz
                 );
-                $isPastLessonStart20Minutes = $now->greaterThanOrEqualTo($lessonStart->copy()->addMinutes(20));
+                $isPastLessonStartMinutes = $now->greaterThanOrEqualTo($lessonStart->copy()->addMinutes($afterStartMinutes));
 
                 // Ders bitisi: end_time varsa onu kullan, yoksa sonraki ders baslangicindan 1 dk onceyi kullan.
                 // Son ders ve end_time yoksa varsayilan 40 dakika ders suresi varsayilir.
@@ -68,7 +72,7 @@ class SendAttendanceReminderNotifications extends Command
                 // Tüm dersler için temel kural:
                 // Ders baslangicindan 20 dk sonra yoklama alinmadiysa bildirim.
                 // Son 5 dk penceresi de ekstra tetikleyici olarak korunur.
-                if (! $isPastLessonStart20Minutes && ! $isInLastFiveMinutes) {
+                if (! $isPastLessonStartMinutes && ! ($lastFiveEnabled && $isInLastFiveMinutes)) {
                     continue;
                 }
 
@@ -94,8 +98,8 @@ class SendAttendanceReminderNotifications extends Command
                 }
 
                 $periodLabel = $schedule->period_no ? ($schedule->period_no.'. ders') : 'ilgili ders';
-                $reason = $isPastLessonStart20Minutes
-                    ? 'Ders baslangicindan 20 dakika gecti'
+                $reason = $isPastLessonStartMinutes
+                    ? "Ders baslangicindan {$afterStartMinutes} dakika gecti"
                     : 'Dersin bitimine 5 dakikadan az kaldi';
 
                 $sent += $pushNotifications->sendToUsers(
