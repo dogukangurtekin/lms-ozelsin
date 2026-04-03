@@ -16,9 +16,9 @@ class SendAttendanceReminderNotifications extends Command
 
     public function handle(PushNotificationService $pushNotifications): int
     {
-        $today = now()->toDateString();
-        $dayOfWeek = (int) Carbon::parse($today)->dayOfWeekIso;
-        $currentTime = now()->format('H:i:s');
+        $now = now();
+        $today = $now->toDateString();
+        $dayOfWeek = (int) $now->dayOfWeekIso;
 
         $schedules = TeacherSchedule::query()
             ->with(['teacher:id,name', 'class:id,name'])
@@ -26,19 +26,25 @@ class SendAttendanceReminderNotifications extends Command
             ->where('day_of_week', $dayOfWeek)
             ->whereNotNull('teacher_id')
             ->whereNotNull('class_id')
-            ->where(function ($query) use ($currentTime) {
-                $query->whereNotNull('end_time')
-                    ->where('end_time', '<', $currentTime)
-                    ->orWhere(function ($subQuery) use ($currentTime) {
-                        $subQuery->whereNull('end_time')
-                            ->where('start_time', '<', $currentTime);
-                    });
-            })
+            ->whereNotNull('end_time')
             ->get();
 
         $sent = 0;
 
         foreach ($schedules as $schedule) {
+            $endTime = (string) $schedule->end_time;
+            if ($endTime === '') {
+                continue;
+            }
+
+            $lessonEnd = Carbon::createFromFormat('Y-m-d H:i:s', $today.' '.substr($endTime, 0, 8));
+            $reminderStart = $lessonEnd->copy()->subMinutes(10);
+
+            // Sadece dersin son 10 dakikasi icinde, dakika bazli hatirlatma gonder.
+            if (! $now->betweenIncluded($reminderStart, $lessonEnd)) {
+                continue;
+            }
+
             $session = AttendanceSession::query()
                 ->where('schedule_id', $schedule->id)
                 ->whereDate('attendance_date', $today)
@@ -51,7 +57,7 @@ class SendAttendanceReminderNotifications extends Command
             $sent += $pushNotifications->sendToUsers(
                 [$schedule->teacher_id],
                 'Yoklama hatirlatmasi',
-                (($schedule->class?->name ?? 'Sinif') . ' sinifi icin ' . ($schedule->lesson_name ?: 'ders') . ' yoklamasi henuz alinmadi. Lutfen yoklama islemini tamamlayin.'),
+                (($schedule->class?->name ?? 'Sinif') . ' sinifi icin ' . ($schedule->lesson_name ?: 'ders') . ' yoklamasi henuz alinmadi. Dersin bitimine 10 dakikadan az kaldi, lutfen yoklamayi tamamlayin.'),
                 route('attendance.index', ['date' => $today, 'schedule_id' => $schedule->id]),
                 ['notification_type' => 'attendance_reminder']
             );

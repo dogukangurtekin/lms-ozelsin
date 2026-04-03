@@ -19,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {
-        $schedule->command('notifications:attendance-reminders')->everyThirtyMinutes();
+        $schedule->command('notifications:attendance-reminders')->everyMinute();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
