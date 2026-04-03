@@ -353,26 +353,44 @@
                     <article class="rounded-3xl border border-slate-200 p-5">
                         <h4 class="text-lg font-semibold text-slate-900">Belge Şablonu Tasarım</h4>
                         <p class="mt-1 text-xs text-slate-500">PDF üretiminde kullanılacak belge stilini ve ana renkleri seçin.</p>
-                        <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                            <div class="md:col-span-2 xl:col-span-1">
-                                <label class="mb-1 block text-sm text-slate-600">Şablon</label>
-                                <select name="exam_template" class="w-full rounded-xl border-slate-300">
-                                    <option value="modern" @selected(old('exam_template', 'modern') === 'modern')>Modern</option>
-                                    <option value="classic" @selected(old('exam_template') === 'classic')>Klasik</option>
-                                    <option value="minimal" @selected(old('exam_template') === 'minimal')>Minimal</option>
-                                </select>
+                        <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div class="md:col-span-2">
+                                    <label class="mb-1 block text-sm text-slate-600">Şablon</label>
+                                    <select name="exam_template" class="w-full rounded-xl border-slate-300" data-exam-template-select>
+                                        <option value="modern" @selected(old('exam_template', 'modern') === 'modern')>Modern</option>
+                                        <option value="classic" @selected(old('exam_template') === 'classic')>Klasik</option>
+                                        <option value="minimal" @selected(old('exam_template') === 'minimal')>Minimal</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-sm text-slate-600">Ana Renk</label>
+                                    <input type="color" name="theme_primary_color" value="{{ old('theme_primary_color', '#0f172a') }}" class="h-11 w-full rounded-xl border-slate-300 p-1" data-theme-primary-color>
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-sm text-slate-600">Vurgu Rengi</label>
+                                    <input type="color" name="theme_accent_color" value="{{ old('theme_accent_color', '#1d4ed8') }}" class="h-11 w-full rounded-xl border-slate-300 p-1" data-theme-accent-color>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="mb-1 block text-sm text-slate-600">Çerçeve Rengi</label>
+                                    <input type="color" name="theme_border_color" value="{{ old('theme_border_color', '#cbd5e1') }}" class="h-11 w-full rounded-xl border-slate-300 p-1" data-theme-border-color>
+                                </div>
                             </div>
-                            <div>
-                                <label class="mb-1 block text-sm text-slate-600">Ana Renk</label>
-                                <input type="color" name="theme_primary_color" value="{{ old('theme_primary_color', '#0f172a') }}" class="h-11 w-full rounded-xl border-slate-300 p-1">
-                            </div>
-                            <div>
-                                <label class="mb-1 block text-sm text-slate-600">Vurgu Rengi</label>
-                                <input type="color" name="theme_accent_color" value="{{ old('theme_accent_color', '#1d4ed8') }}" class="h-11 w-full rounded-xl border-slate-300 p-1">
-                            </div>
-                            <div>
-                                <label class="mb-1 block text-sm text-slate-600">Çerçeve Rengi</label>
-                                <input type="color" name="theme_border_color" value="{{ old('theme_border_color', '#cbd5e1') }}" class="h-11 w-full rounded-xl border-slate-300 p-1">
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                                <div class="mb-2 text-sm font-semibold text-slate-700">Canlı Şablon Önizleme</div>
+                                <div class="mx-auto max-w-[340px] rounded-xl bg-white p-3 shadow-sm" data-template-preview-card style="border:2px solid #0f172a;">
+                                    <div class="mb-2 rounded-lg px-3 py-2 text-center text-[11px] font-bold tracking-wide text-white" data-template-preview-title style="background:#0f172a;">
+                                        SINAV GİRİŞ BELGESİ
+                                    </div>
+                                    <div class="rounded-lg border p-2" data-template-preview-stack style="border-color:#cbd5e1;">
+                                        <div class="text-center text-[10px] font-semibold text-slate-600">Öğrenci Adı Soyadı</div>
+                                        <div class="text-center text-sm font-bold text-slate-900">ÖRNEK ÖĞRENCİ</div>
+                                        <div class="mt-2 border-t border-dashed pt-2 text-center text-[10px] text-slate-600">Sınıf / Şube: 7-A | Sıra: 12</div>
+                                    </div>
+                                    <div class="mt-2 rounded border px-2 py-1 text-center text-[10px] font-semibold text-slate-700" data-template-preview-tag style="border-color:#cbd5e1;background:#f8fafc;">
+                                        Örnek Oturum Tablosu
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </article>
@@ -694,6 +712,50 @@
             renderRows();
         }
 
+        function initTemplatePreview(form) {
+            const templateEl = form.querySelector('[data-exam-template-select]');
+            const primaryEl = form.querySelector('[data-theme-primary-color]');
+            const accentEl = form.querySelector('[data-theme-accent-color]');
+            const borderEl = form.querySelector('[data-theme-border-color]');
+            const cardEl = form.querySelector('[data-template-preview-card]');
+            const titleEl = form.querySelector('[data-template-preview-title]');
+            const stackEl = form.querySelector('[data-template-preview-stack]');
+            const tagEl = form.querySelector('[data-template-preview-tag]');
+            if (!templateEl || !primaryEl || !accentEl || !borderEl || !cardEl || !titleEl || !stackEl || !tagEl) return;
+
+            const apply = () => {
+                const template = String(templateEl.value || 'modern');
+                const primary = String(primaryEl.value || '#0f172a');
+                const accent = String(accentEl.value || '#1d4ed8');
+                const border = String(borderEl.value || '#cbd5e1');
+
+                cardEl.style.border = `2px solid ${primary}`;
+                stackEl.style.borderColor = border;
+                tagEl.style.borderColor = border;
+
+                if (template === 'classic') {
+                    titleEl.style.background = `linear-gradient(90deg, ${primary}, ${accent})`;
+                    titleEl.style.color = '#ffffff';
+                    titleEl.style.border = 'none';
+                    cardEl.style.borderRadius = '0.6rem';
+                } else if (template === 'minimal') {
+                    titleEl.style.background = '#f8fafc';
+                    titleEl.style.color = primary;
+                    titleEl.style.border = `1px solid ${border}`;
+                    cardEl.style.borderRadius = '0.75rem';
+                } else {
+                    titleEl.style.background = primary;
+                    titleEl.style.color = '#ffffff';
+                    titleEl.style.border = 'none';
+                    cardEl.style.borderRadius = '0.75rem';
+                }
+            };
+
+            [templateEl, primaryEl, accentEl, borderEl].forEach((el) => el.addEventListener('input', apply));
+            [templateEl, primaryEl, accentEl, borderEl].forEach((el) => el.addEventListener('change', apply));
+            apply();
+        }
+
         async function convertExamExcelFileToRows(file) {
             const ext = (file.name.split('.').pop() || '').toLowerCase();
             if (!['xls', 'xlsx'].includes(ext)) return null;
@@ -737,6 +799,7 @@
 
         document.querySelectorAll('.exam-entry-form').forEach((form) => {
             buildRoomRows(form);
+            initTemplatePreview(form);
             const logoEditorState = initLogoEditors(form);
             form.addEventListener('submit', async function (event) {
                 event.preventDefault();
