@@ -19,7 +19,7 @@ class SendAttendanceReminderNotifications extends Command
     public function handle(PushNotificationService $pushNotifications): int
     {
         $tz = 'Europe/Istanbul';
-        $afterStartMinutes = (int) Cache::get('notification_settings.attendance_reminder_after_start_minutes', 20);
+        $afterStartMinutes = (int) Cache::get('notification_settings.attendance_reminder_after_start_minutes', 10);
         $afterStartMinutes = max(1, min(180, $afterStartMinutes));
         $lastFiveEnabled = (bool) Cache::get('notification_settings.attendance_last_five_enabled', true);
         $now = now($tz);

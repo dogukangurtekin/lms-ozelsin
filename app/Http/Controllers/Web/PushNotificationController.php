@@ -34,7 +34,7 @@ class PushNotificationController extends Controller
         $userNotificationPreferences = collect();
         $deviceStatuses = collect();
         $advancedNotificationSettings = [
-            'attendance_reminder_after_start_minutes' => (int) Cache::get('notification_settings.attendance_reminder_after_start_minutes', 20),
+            'attendance_reminder_after_start_minutes' => (int) Cache::get('notification_settings.attendance_reminder_after_start_minutes', 10),
             'attendance_last_five_enabled' => (bool) Cache::get('notification_settings.attendance_last_five_enabled', true),
         ];
         $usersForTargeting = collect();
