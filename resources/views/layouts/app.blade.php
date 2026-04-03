@@ -258,7 +258,7 @@
                 x-transition:leave="transform transition ease-in duration-[100ms]"
                 x-transition:leave-start="translate-x-0"
                 x-transition:leave-end="-translate-x-full"
-                class="absolute left-0 top-0 h-full w-[86vw] max-w-72 bg-white border-r border-slate-200"
+                class="absolute left-0 top-16 h-[calc(100%-64px)] w-[86vw] max-w-72 bg-white border-r border-slate-200"
                 style="display:none;"
             >
                 @include('layouts.navigation')
