@@ -19,7 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {
-        $schedule->command('notifications:attendance-reminders')->everyMinute();
+        $schedule->command('notifications:attendance-reminders')
+            ->timezone('Europe/Istanbul')
+            ->everyMinute();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
