@@ -65,5 +65,17 @@
             </div>
         </section>
     </div>
+
+    <dialog id="pwa-install-dialog" class="backdrop:bg-slate-900/50 w-[calc(100vw-1.5rem)] max-w-lg rounded-2xl border border-slate-200 p-0 max-sm:mx-auto">
+        <form method="dialog" class="border-b border-slate-200 px-4 py-4 sm:px-6">
+            <div class="flex items-center justify-between gap-4">
+                <h3 class="text-lg font-semibold text-slate-900" data-pwa-install-dialog-title>Kurulum Yardimi</h3>
+                <button type="submit" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    Kapat
+                </button>
+            </div>
+        </form>
+        <div class="px-4 py-5 sm:px-6" data-pwa-install-dialog-body></div>
+    </dialog>
 </body>
 </html>

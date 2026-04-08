@@ -33,5 +33,14 @@
 
         <button type="submit" class="w-full rounded-lg bg-slate-900 text-white py-2.5 font-medium hover:bg-slate-800">Giris Yap</button>
 
+        <div class="pt-2 space-y-2">
+            <button type="button" data-pwa-install class="w-full rounded-lg border border-indigo-300 bg-indigo-50 text-indigo-700 py-2.5 font-medium hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60">
+                Uygulamayi Kur
+            </button>
+            <div data-pwa-install-status class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                Telefonunuzda uygulama gibi kullanmak icin kurulum butonunu kullanin. iPhone icin Paylas > Ana Ekrana Ekle adimini takip edin.
+            </div>
+        </div>
+
     </form>
 </x-guest-layout>
