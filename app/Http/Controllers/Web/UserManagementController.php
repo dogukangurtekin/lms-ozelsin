@@ -130,35 +130,38 @@ class UserManagementController extends Controller
             )
             ->join('teachers', 'teachers.user_id', '=', 'users.id')
             ->orderBy('users.name')
-            ->get()
-            ->map(function ($teacher) {
-                $classNames = DB::table('class_user')
-                    ->join('classes', 'classes.id', '=', 'class_user.class_id')
-                    ->where('class_user.user_id', $teacher->user_id)
-                    ->orderBy('classes.name')
-                    ->pluck('classes.name')
-                    ->implode(', ');
+            ->get();
 
-                $teacher->class_names = $classNames;
-                return $teacher;
-            });
+        $teacherClassNamesMap = DB::table('class_user')
+            ->join('classes', 'classes.id', '=', 'class_user.class_id')
+            ->whereIn('class_user.user_id', $teacherTable->pluck('user_id')->all())
+            ->select('class_user.user_id', DB::raw('GROUP_CONCAT(classes.name ORDER BY classes.name SEPARATOR ", ") as class_names'))
+            ->groupBy('class_user.user_id')
+            ->pluck('class_names', 'class_user.user_id');
+
+        $teacherTable = $teacherTable->map(function ($teacher) use ($teacherClassNamesMap) {
+            $teacher->class_names = (string) ($teacherClassNamesMap[$teacher->user_id] ?? '');
+            return $teacher;
+        });
 
         $parentTable = ParentProfile::query()
             ->select('parents.id', 'parents.relation_type', 'users.name', 'users.email', 'users.phone')
             ->join('users', 'users.id', '=', 'parents.user_id')
             ->orderBy('users.name')
-            ->get()
-            ->map(function ($parent) {
-                $parent->student_names = DB::table('parent_student')
-                    ->join('students', 'students.id', '=', 'parent_student.student_id')
-                    ->join('users as su', 'su.id', '=', 'students.user_id')
-                    ->where('parent_student.parent_id', $parent->id)
-                    ->orderBy('su.name')
-                    ->pluck('su.name')
-                    ->implode(', ');
+            ->get();
 
-                return $parent;
-            });
+        $parentStudentNamesMap = DB::table('parent_student')
+            ->join('students', 'students.id', '=', 'parent_student.student_id')
+            ->join('users as su', 'su.id', '=', 'students.user_id')
+            ->whereIn('parent_student.parent_id', $parentTable->pluck('id')->all())
+            ->select('parent_student.parent_id', DB::raw('GROUP_CONCAT(su.name ORDER BY su.name SEPARATOR ", ") as student_names'))
+            ->groupBy('parent_student.parent_id')
+            ->pluck('student_names', 'parent_student.parent_id');
+
+        $parentTable = $parentTable->map(function ($parent) use ($parentStudentNamesMap) {
+            $parent->student_names = (string) ($parentStudentNamesMap[$parent->id] ?? '');
+            return $parent;
+        });
 
         return view('users.index', compact(
             'users',
