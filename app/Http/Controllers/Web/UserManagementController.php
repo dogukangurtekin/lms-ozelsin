@@ -86,8 +86,14 @@ class UserManagementController extends Controller
             'passive' => max($summary['total_students'] - $summary['active_students'], 0),
         ];
 
-        $classCapacities = $classes->map(function (SchoolClass $class) {
-            $total = Student::where('class_id', $class->id)->count();
+        $classStudentCounts = Student::query()
+            ->select('class_id', DB::raw('COUNT(*) as total'))
+            ->whereNotNull('class_id')
+            ->groupBy('class_id')
+            ->pluck('total', 'class_id');
+
+        $classCapacities = $classes->map(function (SchoolClass $class) use ($classStudentCounts) {
+            $total = (int) ($classStudentCounts[$class->id] ?? 0);
             return ['name' => $class->name, 'grade_level' => $class->grade_level, 'student_count' => $total];
         });
 
