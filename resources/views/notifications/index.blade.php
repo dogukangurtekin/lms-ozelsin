@@ -126,10 +126,10 @@
                         <div>
                             <label class="mb-1 block text-sm font-medium text-slate-700">Bildirim Tipi</label>
                             <select name="notification_type" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
-                                <option value="system_message">Sistem Ä°Ã§i</option>
-                                <option value="attendance_reminder">Yoklama HatÄ±rlatma</option>
-                                <option value="meeting_created">GÃ¶rÃ¼ÅŸme</option>
-                                <option value="assignment_created">Ã–dev</option>
+                                <option value="system_message">Sistem İçi</option>
+                                <option value="attendance_reminder">Yoklama Hatırlatma</option>
+                                <option value="meeting_created">Görüşme</option>
+                                <option value="assignment_created">Ödev</option>
                             </select>
                         </div>
                         <div>
@@ -150,13 +150,13 @@
                             </select>
                         </div>
                         <div class="hidden" data-users-target-wrap>
-                            <label class="mb-1 block text-sm font-medium text-slate-700">Ã–zel KullanÄ±cÄ±lar</label>
+                            <label class="mb-1 block text-sm font-medium text-slate-700">Özel Kullanıcılar</label>
                             <select name="user_ids[]" multiple class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm min-h-[120px]">
                                 @foreach(($usersForTargeting ?? collect()) as $u)
                                     <option value="{{ $u->id }}">{{ $u->name }}</option>
                                 @endforeach
                             </select>
-                            <p class="mt-1 text-xs text-slate-500">Ctrl/Cmd ile Ã§oklu seÃ§im yapabilirsiniz.</p>
+                            <p class="mt-1 text-xs text-slate-500">Ctrl/Cmd ile çoklu seçim yapabilirsiniz.</p>
                         </div>
                         <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
                             Bildirim Gonder
@@ -169,18 +169,18 @@
         @if(auth()->user()?->hasRole('admin'))
             <section class="lms-panel">
                 <div class="flex items-center justify-between mb-3">
-                    <h3 class="lms-panel-title">Bildirim YÃ¶netim AyarlarÄ±</h3>
+                    <h3 class="lms-panel-title">Bildirim Yönetim Ayarları</h3>
                 </div>
                 <form method="POST" action="{{ route('notifications.settings.update') }}" class="grid gap-4 md:grid-cols-3">
                     @csrf
                     <div>
-                        <label class="mb-1 block text-sm font-medium text-slate-700">Yoklama Bildirim SÃ¼resi (dk)</label>
+                        <label class="mb-1 block text-sm font-medium text-slate-700">Yoklama Bildirim Süresi (dk)</label>
                         <input type="number" min="1" max="180" name="attendance_reminder_after_start_minutes" value="{{ (int) ($advancedNotificationSettings['attendance_reminder_after_start_minutes'] ?? 10) }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
                     </div>
                     <label class="inline-flex items-center gap-2 pt-7 text-sm text-slate-700">
                         <input type="hidden" name="attendance_last_five_enabled" value="0">
                         <input type="checkbox" name="attendance_last_five_enabled" value="1" @checked((bool) ($advancedNotificationSettings['attendance_last_five_enabled'] ?? true)) class="rounded border-slate-300">
-                        Son 5 dakika hatÄ±rlatmasÄ± da aÃ§Ä±k olsun
+                        Son 5 dakika hatırlatması da açık olsun
                     </label>
                     <div class="flex items-end">
                         <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">AyarlarÄ± Kaydet</button>
@@ -285,7 +285,7 @@
                     </div>
                 @else
                     <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                        TÃ¼m bildirim listesi varsayÄ±lan olarak gizli. Ãœstte filtre seÃ§ip "Filtrele" dediÄŸinizde listelenir.
+                        Tüm bildirim listesi varsayılan olarak gizli. Üstte filtre seçip "Filtrele" dediğinizde listelenir.
                     </div>
                 @endif
             </section>
@@ -428,4 +428,3 @@
         });
     </script>
 </x-app-layout>
-
