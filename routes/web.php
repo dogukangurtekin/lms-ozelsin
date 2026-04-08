@@ -68,9 +68,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('users/students', [UserManagementController::class, 'storeStudent'])->name('users.students.store')->middleware('role:admin')->middleware('module:users');
     Route::post('users/teachers', [UserManagementController::class, 'storeTeacher'])->name('users.teachers.store')->middleware('role:admin')->middleware('module:users');
     Route::post('users/classes', [UserManagementController::class, 'storeClass'])->name('users.classes.store')->middleware('role:admin')->middleware('module:users');
+    Route::post('users/branches', [UserManagementController::class, 'storeBranch'])->name('users.branches.store')->middleware('role:admin')->middleware('module:users');
     Route::post('users/students/import', [UserManagementController::class, 'importStudents'])->name('users.students.import')->middleware('role:admin')->middleware('module:users');
     Route::post('users/teachers/import', [UserManagementController::class, 'importTeachers'])->name('users.teachers.import')->middleware('role:admin')->middleware('module:users');
     Route::post('users/classes/import', [UserManagementController::class, 'importClasses'])->name('users.classes.import')->middleware('role:admin')->middleware('module:users');
+    Route::post('users/branches/import', [UserManagementController::class, 'importBranches'])->name('users.branches.import')->middleware('role:admin')->middleware('module:users');
     Route::get('users/templates/{type}', [UserManagementController::class, 'downloadTemplate'])->name('users.templates.download')->middleware('role:admin')->middleware('module:users');
     Route::delete('users/students/{student}', [UserManagementController::class, 'destroyStudent'])->name('users.students.destroy')->middleware('role:admin')->middleware('module:users');
     Route::put('users/students/{student}', [UserManagementController::class, 'updateStudent'])->name('users.students.update')->middleware('role:admin')->middleware('module:users');

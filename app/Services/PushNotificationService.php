@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Minishlink\WebPush\Subscription;
 use Minishlink\WebPush\WebPush;
 use Symfony\Component\Process\Process;
+use Throwable;
 
 class PushNotificationService
 {
@@ -94,51 +95,62 @@ class PushNotificationService
             'private_key' => ['required', 'string'],
         ])->validate();
 
-        $webPush = new WebPush([
-            'VAPID' => [
-                'subject' => $config['subject'],
-                'publicKey' => $config['public_key'],
-                'privateKey' => $config['private_key'],
-            ],
-        ]);
+        try {
+            $webPush = new WebPush([
+                'VAPID' => [
+                    'subject' => $config['subject'],
+                    'publicKey' => $config['public_key'],
+                    'privateKey' => $config['private_key'],
+                ],
+            ]);
 
-        $payload = json_encode([
-            'title' => $title,
-            'body' => $body,
-            'url' => $url ?: route('dashboard'),
-            'icon' => asset('assets/logo.png'),
-            'badge' => asset('assets/logo.png'),
-        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $payload = json_encode([
+                'title' => $title,
+                'body' => $body,
+                'url' => $url ?: route('dashboard'),
+                'icon' => asset('assets/logo.png'),
+                'badge' => asset('assets/logo.png'),
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
-        foreach ($subscriptions as $subscription) {
-            $webPush->queueNotification(
-                Subscription::create([
-                    'endpoint' => $subscription->endpoint,
-                    'publicKey' => $subscription->public_key,
-                    'authToken' => $subscription->auth_token,
-                    'contentEncoding' => $subscription->content_encoding ?: 'aesgcm',
-                ]),
-                $payload
-            );
-        }
-
-        $sentCount = 0;
-        $failedCount = 0;
-        $lastError = null;
-
-        foreach ($webPush->flush() as $report) {
-            if ($report->isSuccess()) {
-                $sentCount++;
-                continue;
+            foreach ($subscriptions as $subscription) {
+                $webPush->queueNotification(
+                    Subscription::create([
+                        'endpoint' => $subscription->endpoint,
+                        'publicKey' => $subscription->public_key,
+                        'authToken' => $subscription->auth_token,
+                        'contentEncoding' => $subscription->content_encoding ?: 'aesgcm',
+                    ]),
+                    $payload
+                );
             }
 
-            $failedCount++;
-            $lastError = $report->getReason();
+            $sentCount = 0;
+            $failedCount = 0;
+            $lastError = null;
 
-            $endpoint = $report->getRequest()?->getUri()?->__toString();
-            if ($endpoint) {
-                PushSubscription::query()->where('endpoint', $endpoint)->delete();
+            foreach ($webPush->flush() as $report) {
+                if ($report->isSuccess()) {
+                    $sentCount++;
+                    continue;
+                }
+
+                $failedCount++;
+                $lastError = $report->getReason();
+
+                $endpoint = $report->getRequest()?->getUri()?->__toString();
+                if ($endpoint) {
+                    PushSubscription::query()->where('endpoint', $endpoint)->delete();
+                }
             }
+        } catch (Throwable $e) {
+            $this->writeLog($title, $body, $url, array_merge($meta, [
+                'success_count' => 0,
+                'failed_count' => $subscriptions->count(),
+                'status' => 'failed',
+                'error_message' => 'Push gonderimi basarisiz: '.$e->getMessage(),
+            ]));
+
+            return 0;
         }
 
         $this->writeLog($title, $body, $url, array_merge($meta, [

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\Role;
 use App\Models\ParentProfile;
 use App\Models\SchoolClass;
@@ -69,6 +70,9 @@ class UserManagementController extends Controller
         $teachers = Teacher::with('user:id,name,email,phone,is_active', 'user.classes:id,name')
             ->latest()
             ->get();
+        $branches = Schema::hasTable('branches')
+            ? Branch::query()->orderBy('name')->get(['id', 'name'])
+            : collect();
 
         $summary = [
             'total_students' => User::whereHas('roles', fn($q) => $q->where('name', 'student'))->count(),
@@ -169,7 +173,8 @@ class UserManagementController extends Controller
             'gradeDistribution',
             'studentTable',
             'teacherTable',
-            'parentTable'
+            'parentTable',
+            'branches'
         ));
     }
 
@@ -301,6 +306,14 @@ class UserManagementController extends Controller
             'is_active' => 'nullable|boolean',
         ]);
 
+        $branchName = null;
+        if (! empty($data['branch'])) {
+            $branch = Schema::hasTable('branches')
+                ? Branch::firstOrCreate(['name' => trim((string) $data['branch'])])
+                : null;
+            $branchName = $branch?->name ?? trim((string) $data['branch']);
+        }
+
         $teacherRoleId = $this->resolveRoleId('teacher', 'Öğretmen');
 
         $user = User::create([
@@ -315,7 +328,7 @@ class UserManagementController extends Controller
 
         Teacher::create([
             'user_id' => $user->id,
-            'branch' => $data['branch'] ?? null,
+            'branch' => $branchName,
         ]);
 
         if (! empty($data['class_ids'])) {
@@ -452,9 +465,17 @@ class UserManagementController extends Controller
             ]);
             $user->roles()->sync([$teacherRoleId]);
 
+            $branchName = null;
+            if (! empty($row['branch'])) {
+                $branch = Schema::hasTable('branches')
+                    ? Branch::firstOrCreate(['name' => trim((string) $row['branch'])])
+                    : null;
+                $branchName = $branch?->name ?? trim((string) $row['branch']);
+            }
+
             Teacher::create([
                 'user_id' => $user->id,
-                'branch' => $row['branch'] ?? null,
+                'branch' => $branchName,
             ]);
 
             if (! empty($row['class_names'])) {
@@ -532,6 +553,51 @@ class UserManagementController extends Controller
         return $this->importSuccessResponse($request, "Toplu sinif kaydi tamamlandi. Eklenen: {$created}", $created);
     }
 
+    public function storeBranch(Request $request)
+    {
+        abort_unless(Schema::hasTable('branches'), 500, 'Brans tablosu bulunamadi. Lutfen migration calistirin.');
+
+        $data = $request->validate([
+            'name' => 'required|string|max:255|unique:branches,name',
+        ]);
+
+        Branch::create([
+            'name' => trim((string) $data['name']),
+        ]);
+
+        return redirect()->route('users.index', ['tab' => 'branslar'])->with('status', 'Brans kaydedildi.');
+    }
+
+    public function importBranches(Request $request)
+    {
+        abort_unless(Schema::hasTable('branches'), 500, 'Brans tablosu bulunamadi. Lutfen migration calistirin.');
+
+        $rows = $this->extractRowsFromRequest($request);
+        if (empty($rows)) {
+            return $this->importFailureResponse($request, 'Dosya okunamadi veya satir bulunamadi. Lutfen sistemden indirilen sablonu kullanin.');
+        }
+
+        $created = 0;
+        foreach ($rows as $row) {
+            $row = $this->normalizeRowKeys($row);
+            $name = trim((string) ($row['name'] ?? $row['branch'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+
+            $branch = Branch::firstOrCreate(['name' => $name]);
+            if ($branch->wasRecentlyCreated) {
+                $created++;
+            }
+        }
+
+        if ($created === 0) {
+            return $this->importFailureResponse($request, 'Toplu brans kaydinda yeni kayit eklenmedi. Tekrar eden veya bos satirlari kontrol edin.');
+        }
+
+        return $this->importSuccessResponse($request, "Toplu brans kaydi tamamlandi. Eklenen: {$created}", $created);
+    }
+
     public function downloadTemplate(string $type): StreamedResponse
     {
         $templates = [
@@ -546,6 +612,10 @@ class UserManagementController extends Controller
             'classes' => [
                 ['sinif_seviyesi', 'sube', 'aciklama', 'sube_ogretmeni_e_posta'],
                 ['5', 'A', 'LGS Hazırlık', 'ayse@example.com'],
+            ],
+            'branches' => [
+                ['brans_adi'],
+                ['Matematik'],
             ],
         ];
 
@@ -723,6 +793,7 @@ class UserManagementController extends Controller
             'sinif_adi' => 'class_name',
             'aktif_mi' => 'is_active',
             'brans' => 'branch',
+            'brans_adi' => 'branch',
             'siniflar' => 'class_names',
             'sinif_seviyesi' => 'grade_level',
             'sube' => 'section',
@@ -805,8 +876,16 @@ class UserManagementController extends Controller
             'is_active' => (bool) ($data['is_active'] ?? true),
         ]);
 
+        $branchName = null;
+        if (! empty($data['branch'])) {
+            $branch = Schema::hasTable('branches')
+                ? Branch::firstOrCreate(['name' => trim((string) $data['branch'])])
+                : null;
+            $branchName = $branch?->name ?? trim((string) $data['branch']);
+        }
+
         $teacher->update([
-            'branch' => $data['branch'] ?? null,
+            'branch' => $branchName,
         ]);
 
         $user->classes()->sync($data['class_ids'] ?? []);

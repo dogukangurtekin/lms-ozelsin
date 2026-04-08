@@ -18,6 +18,7 @@
                 <button @click="tab='ozet'" :class="tab==='ozet' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'" class="px-4 py-2 rounded-xl text-sm font-semibold">Özet</button>
                 <button @click="tab='ogrenciler'" :class="tab==='ogrenciler' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'" class="px-4 py-2 rounded-xl text-sm font-semibold">Öğrenciler</button>
                 <button @click="tab='ogretmenler'" :class="tab==='ogretmenler' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'" class="px-4 py-2 rounded-xl text-sm font-semibold">Öğretmenler</button>
+                <button @click="tab='branslar'" :class="tab==='branslar' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'" class="px-4 py-2 rounded-xl text-sm font-semibold">Branslar</button>
                 <button @click="tab='veliler'" :class="tab==='veliler' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'" class="px-4 py-2 rounded-xl text-sm font-semibold">Veliler</button>
                 <button @click="tab='siniflar'" :class="tab==='siniflar' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'" class="px-4 py-2 rounded-xl text-sm font-semibold">Sınıflar</button>
                 <button @click="tab='raporlar'" :class="tab==='raporlar' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'" class="px-4 py-2 rounded-xl text-sm font-semibold">Raporlar</button>
@@ -212,7 +213,12 @@
                     <input name="email" type="email" placeholder="E-posta" class="rounded-lg border-slate-300" required>
                     <input name="phone" placeholder="Telefon" class="rounded-lg border-slate-300">
                     <input name="password" type="password" placeholder="Sifre" class="rounded-lg border-slate-300" required>
-                    <input name="branch" placeholder="Brans" class="rounded-lg border-slate-300">
+                    <select name="branch" class="rounded-lg border-slate-300">
+                        <option value="">Brans Sec</option>
+                        @foreach($branches as $branch)
+                            <option value="{{ $branch->name }}">{{ $branch->name }}</option>
+                        @endforeach
+                    </select>
                     <select name="is_active" class="rounded-lg border-slate-300"><option value="1">Aktif</option><option value="0">Pasif</option></select>
                     <div class="md:col-span-3 rounded-lg border border-slate-200 p-3 grid grid-cols-2 md:grid-cols-4 gap-2">
                         @foreach($classes as $class)
@@ -280,7 +286,12 @@
                                         <input name="name" value="{{ $row->name }}" class="rounded-lg border-slate-300 text-sm" required>
                                         <input name="email" type="email" value="{{ $row->email }}" class="rounded-lg border-slate-300 text-sm" required>
                                         <input name="phone" value="{{ $row->phone }}" class="rounded-lg border-slate-300 text-sm">
-                                        <input name="branch" value="{{ $row->branch }}" class="rounded-lg border-slate-300 text-sm" placeholder="Branş">
+                                        <select name="branch" class="rounded-lg border-slate-300 text-sm">
+                                            <option value="">Brans Sec</option>
+                                            @foreach($branches as $branch)
+                                                <option value="{{ $branch->name }}" @selected($row->branch === $branch->name)>{{ $branch->name }}</option>
+                                            @endforeach
+                                        </select>
                                         <select name="is_active" class="rounded-lg border-slate-300 text-sm h-10">
                                             <option value="1" @selected((int)$row->is_active===1)>Aktif</option>
                                             <option value="0" @selected((int)$row->is_active===0)>Pasif</option>
@@ -306,6 +317,47 @@
                     @empty
                         <tbody><tr><td colspan="7">Kayıt yok.</td></tr></tbody>
                     @endforelse
+                </table>
+            </div>
+        </section>
+
+        <section x-show="tab==='branslar'" style="display:none;" class="space-y-4">
+            <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                <h3 class="font-semibold text-slate-800">Yeni Brans Ekle</h3>
+                <form method="POST" action="{{ route('users.branches.store') }}" class="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3">
+                    @csrf
+                    <input type="hidden" name="tab" value="branslar">
+                    <input name="name" placeholder="Brans Adi" class="rounded-lg border-slate-300 md:col-span-3" required>
+                    <button class="rounded-lg px-4 py-2 font-semibold" style="background:#2563eb;color:#fff;border:1px solid #1d4ed8;">Kaydet</button>
+                </form>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h3 class="font-semibold text-slate-800">Toplu Brans Yukleme</h3>
+                </div>
+                <a href="{{ route('users.templates.download', 'branches') }}" class="mt-3 inline-flex items-center rounded-lg text-white px-4 py-2 text-sm font-semibold shadow-sm border" style="background:#16a34a;border-color:#15803d;">Excel Sablonunu Indir (.xls)</a>
+                <form method="POST" action="{{ route('users.branches.import') }}" enctype="multipart/form-data" class="mt-3 flex flex-wrap items-center gap-3 bulk-upload-form" data-label="Brans toplu yukleme">
+                    @csrf
+                    <input type="file" name="import_file" accept=".csv,.txt,.xls,.xlsx" class="rounded-lg border-slate-300" required>
+                    <button class="rounded-lg bg-slate-900 text-white px-4 py-2 text-sm">Toplu Yukle (csv/xls/xlsx/txt)</button>
+                </form>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 overflow-visible mobile-table-wrap">
+                <h3 class="font-semibold text-slate-800 mb-3">Brans Listesi</h3>
+                <table class="lms-table stack-list-mobile">
+                    <thead><tr><th>#</th><th>Brans</th></tr></thead>
+                    <tbody>
+                    @forelse($branches as $branch)
+                        <tr>
+                            <td>{{ $branch->id }}</td>
+                            <td class="font-semibold">{{ $branch->name }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="2">Kayit yok.</td></tr>
+                    @endforelse
+                    </tbody>
                 </table>
             </div>
         </section>
@@ -531,5 +583,3 @@
         });
     </script>
 </x-app-layout>
-
-

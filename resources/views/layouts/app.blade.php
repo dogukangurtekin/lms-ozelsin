@@ -80,6 +80,31 @@
         $headerNotifications = collect();
         $headerNotificationCount = 0;
         $readNotificationIds = collect();
+        $headerPageTitle = 'Dashboard';
+
+        if (request()->routeIs('users.*')) {
+            $headerPageTitle = 'Kullanıcı Yönetimi';
+        } elseif (request()->routeIs('assignments.*')) {
+            $headerPageTitle = 'Ödev Yönetimi';
+        } elseif (request()->routeIs('attendance.*')) {
+            $headerPageTitle = 'Yoklama Modülü';
+        } elseif (request()->routeIs('timetables.*')) {
+            $headerPageTitle = 'Ders Programı';
+        } elseif (request()->routeIs('meetings.*')) {
+            $headerPageTitle = 'Görüşmeler';
+        } elseif (request()->routeIs('reports.*')) {
+            $headerPageTitle = 'Raporlama';
+        } elseif (request()->routeIs('books.*')) {
+            $headerPageTitle = 'Kitap Yönetimi';
+        } elseif (request()->routeIs('whatsapp.*')) {
+            $headerPageTitle = 'Whatsapp Modülü';
+        } elseif (request()->routeIs('lessons.*')) {
+            $headerPageTitle = 'Ders Ekleme Modülü';
+        } elseif (request()->routeIs('role-permissions.*')) {
+            $headerPageTitle = 'Rol ve Modül Yetkileri';
+        } elseif (request()->routeIs('notifications.*') || request()->routeIs('push.*')) {
+            $headerPageTitle = 'Bildirimler';
+        }
 
         if (auth()->check() && \Illuminate\Support\Facades\Schema::hasTable('notification_logs')) {
             $currentUser = auth()->user();
@@ -116,7 +141,7 @@
                 <div class="lms-sidebar-brand" style="margin-top:calc(var(--app-header-height) * 0.18);">
                     <a href="{{ url('dashboard') }}" class="flex items-center gap-3 min-w-0">
                         <img src="{{ asset('assets/logo.png') }}" alt="LMS Logo" class="h-10 w-10 rounded-lg bg-white p-1 border border-slate-200 object-contain">
-                        <div class="lms-page-title text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis min-w-0 font-semibold">Ãƒâ€“zelsin BiliÃ…Å¸im Sistemleri</div>
+                        <div class="lms-page-title text-slate-800 whitespace-nowrap overflow-hidden text-ellipsis min-w-0 font-semibold">Özelsin Bilişim Sistemleri</div>
                     </a>
                 </div>
                 @include('layouts.navigation')
@@ -128,7 +153,7 @@
                         <button
                             @click="sidebarOpen = true"
                             class="lg:hidden inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white h-12 w-12 text-slate-700 shadow-sm hover:bg-slate-50 transition"
-                            aria-label="MenÃƒÆ’Ã‚Â¼yÃƒÆ’Ã‚Â¼ AÃƒÆ’Ã‚Â§"
+                            aria-label="Menüyü Aç"
                         >
                             <span class="lms-mobile-menu-icon" aria-hidden="true">
                                 <span></span>
@@ -136,6 +161,7 @@
                                 <span></span>
                             </span>
                         </button>
+                        <h1 class="hidden lg:block text-lg font-semibold text-slate-800 truncate">{{ $headerPageTitle }}</h1>
                     </div>
 
                     <div class="flex items-center gap-2 shrink-0 ml-3 lms-header-actions">
@@ -298,10 +324,10 @@
 
                 <div class="mt-6 max-w-xl space-y-4">
                     <p class="text-base leading-8 text-slate-700 sm:text-[1.7rem] sm:leading-[2.7rem]">
-                        Onay talepleri, yÃƒÆ’Ã‚Â¶netici mesajlarÃƒâ€Ã‚Â± ve sistem uyarÃƒâ€Ã‚Â±larÃƒâ€Ã‚Â±nÃƒâ€Ã‚Â± anlÃƒâ€Ã‚Â±k almak iÃƒÆ’Ã‚Â§in tarayÃƒâ€Ã‚Â±cÃƒâ€Ã‚Â± bildirimi izni verebilirsiniz.
+                        Onay talepleri, yönetici mesajları ve sistem uyarılarını anlık almak için tarayıcı bildirimi izni verebilirsiniz.
                     </p>
                     <p class="text-sm leading-7 text-slate-500 sm:text-[1.35rem] sm:leading-[2.25rem]">
-                        Ãƒâ€Ã‚Â°zin verirseniz bu cihaz ve tarayÃƒâ€Ã‚Â±cÃƒâ€Ã‚Â± iÃƒÆ’Ã‚Â§in abonelik oluÃƒâ€¦Ã…Â¸turulur. Daha sonra kullanÃƒâ€Ã‚Â±cÃƒâ€Ã‚Â± menÃƒÆ’Ã‚Â¼sÃƒÆ’Ã‚Â¼nden test bildirimi de gÃƒÆ’Ã‚Â¶nderebilirsiniz.
+                        İzin verirseniz bu cihaz ve tarayıcı için abonelik oluşturulur. Daha sonra kullanıcı menüsünden test bildirimi de gönderebilirsiniz.
                     </p>
                     <div
                         data-push-prompt-status
@@ -315,7 +341,7 @@
                         data-push-prompt-never
                         class="h-5 w-5 rounded-md border-slate-300 text-sky-600 focus:ring-sky-500"
                     >
-                    <span>Bir daha hatÃƒâ€Ã‚Â±rlatma</span>
+                    <span>Bir daha hatırlatma</span>
                 </label>
 
                 <div class="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
@@ -324,7 +350,7 @@
                         data-push-prompt-later
                         class="inline-flex items-center justify-center rounded-2xl bg-slate-100 px-5 py-2.5 text-base font-medium text-slate-700 transition hover:bg-slate-200"
                     >
-                        Ãƒâ€¦Ã‚Âimdi DeÃƒâ€Ã…Â¸il
+                        Şimdi Değil
                     </button>
                     <button
                         type="button"
@@ -334,7 +360,7 @@
                         <svg viewBox="0 0 24 24" class="h-4.5 w-4.5" fill="currentColor" aria-hidden="true">
                             <path d="M12 2a6 6 0 0 0-6 6v3.764l-1.447 2.894A1 1 0 0 0 5.447 16h13.106a1 1 0 0 0 .894-1.447L18 11.764V8a6 6 0 0 0-6-6Zm0 20a3 3 0 0 0 2.816-2H9.184A3 3 0 0 0 12 22Z" />
                         </svg>
-                        Ãƒâ€Ã‚Â°zin Ver
+                        İzin Ver
                     </button>
                 </div>
             </div>
@@ -342,5 +368,3 @@
     </div>
 </body>
 </html>
-
-
