@@ -53,8 +53,8 @@ class UserManagementController extends Controller
             $classesQuery->orderBy('section');
         }
         $classes = $hasHomeroomTeacherColumn
-            ? $classesQuery->with('homeroomTeacher:id,name')->get()
-            : $classesQuery->get();
+            ? $classesQuery->with('homeroomTeacher:id,name')->withCount('students')->get()
+            : $classesQuery->withCount('students')->get();
         $teacherUsers = User::query()
             ->where(function ($query) {
                 $query->whereHas('roles', fn($q) => $q->where('name', 'teacher'))
@@ -356,6 +356,7 @@ class UserManagementController extends Controller
         $data = $request->validate([
             'grade_level' => 'required|string|max:20',
             'section' => $hasSectionColumn ? 'required|string|max:10' : 'nullable|string|max:10',
+            'capacity' => 'nullable|integer|min:1|max:500',
             'description' => 'nullable|string|max:1000',
             'homeroom_teacher_id' => $hasHomeroomTeacherColumn ? 'nullable|exists:users,id' : 'nullable',
         ]);
@@ -366,6 +367,7 @@ class UserManagementController extends Controller
         $payload = [
             'name' => $name,
             'grade_level' => $gradeLevel,
+            'capacity' => (int) ($data['capacity'] ?? 18),
             'description' => $data['description'] ?? null,
         ];
         if ($hasSectionColumn) {
@@ -531,6 +533,7 @@ class UserManagementController extends Controller
             $payload = [
                 'name' => $name,
                 'grade_level' => $grade,
+                'capacity' => max(1, (int) ($row['capacity'] ?? 18)),
                 'description' => $row['description'] ?? null,
             ];
             if ($hasSectionColumn) {
@@ -619,8 +622,8 @@ class UserManagementController extends Controller
                 ['Ayşe Kaya', 'ayse@example.com', '5552223344', '12345678', 'Matematik', '5-A|5-B', '1'],
             ],
             'classes' => [
-                ['sinif_seviyesi', 'sube', 'aciklama', 'sube_ogretmeni_e_posta'],
-                ['5', 'A', 'LGS Hazırlık', 'ayse@example.com'],
+                ['sinif_seviyesi', 'sube', 'sinif_mevcudu', 'aciklama', 'sube_ogretmeni_e_posta'],
+                ['5', 'A', '22', 'LGS Hazırlık', 'ayse@example.com'],
             ],
             'branches' => [
                 ['brans_adi'],
@@ -806,6 +809,9 @@ class UserManagementController extends Controller
             'siniflar' => 'class_names',
             'sinif_seviyesi' => 'grade_level',
             'sube' => 'section',
+            'sinif_mevcudu' => 'capacity',
+            'mevcut' => 'capacity',
+            'kapasite' => 'capacity',
             'aciklama' => 'description',
             'sube_ogretmeni_e_posta' => 'homeroom_teacher_email',
         ];
@@ -939,6 +945,7 @@ class UserManagementController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:120',
             'section' => $hasSectionColumn ? 'nullable|string|max:10' : 'nullable',
+            'capacity' => 'nullable|integer|min:1|max:500',
         ]);
 
         $payload = ['name' => trim($data['name'])];
@@ -947,6 +954,7 @@ class UserManagementController extends Controller
                 ? strtoupper(trim((string) $data['section']))
                 : null;
         }
+        $payload['capacity'] = (int) ($data['capacity'] ?? ($class->capacity ?? 18));
 
         $class->update($payload);
         return back()->with('status', 'Sınıf bilgisi güncellendi.');

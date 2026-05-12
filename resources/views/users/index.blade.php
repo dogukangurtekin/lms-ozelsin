@@ -305,7 +305,11 @@
                                                 </label>
                                             @endforeach
                                         </div>
-                                        <div class="md:col-span-2 flex items-end gap-2">
+                                        <div>
+                                        <label class="block text-xs text-slate-600 mb-1">Sinif Mevcudu</label>
+                                        <input name="capacity" type="number" min="1" max="500" value="{{ (int) ($class->capacity ?? 18) }}" class="w-full rounded-lg border-slate-300 text-sm">
+                                    </div>
+                                    <div class="md:col-span-2 flex items-end gap-2">
                                             <button class="rounded-lg bg-blue-600 text-white px-3 h-10 text-sm">Güncelle</button>
                                             <button type="button" @click="editOpen=false" class="rounded-lg border border-slate-300 bg-white px-3 h-10 text-sm">Vazgeç</button>
                                         </div>
@@ -369,6 +373,7 @@
                     @csrf
                     <input name="grade_level" placeholder="Sinif Seviyesi (5,6,7...)" class="rounded-lg border-slate-300" required>
                     <input name="section" placeholder="Sube (A,B,C...)" class="rounded-lg border-slate-300" required>
+                    <input name="capacity" type="number" min="1" max="500" value="18" placeholder="Sinif Mevcudu" class="rounded-lg border-slate-300" required>
                     <select name="homeroom_teacher_id" class="rounded-lg border-slate-300">
                         <option value="">Sube Ogretmeni Sec</option>
                         @foreach($teacherUsers as $teacherUser)
@@ -395,13 +400,14 @@
             <div class="rounded-2xl border border-slate-200 bg-white p-4 overflow-visible mobile-table-wrap">
                 <h3 class="font-semibold text-slate-800 mb-3">Sinif Listesi</h3>
                 <table class="lms-table stack-list-mobile">
-                    <thead><tr><th>Sınıf</th><th>Seviye</th><th>Şube</th><th>Şube Öğretmeni</th><th>Açıklama</th><th class="text-right">İşlem</th></tr></thead>
+                    <thead><tr><th>Sınıf</th><th>Seviye</th><th>Şube</th><th>Mevcut</th><th>Şube Öğretmeni</th><th>Açıklama</th><th class="text-right">İşlem</th></tr></thead>
                     @forelse($classes as $class)
                         <tbody x-data="{ editOpen: false }">
                         <tr>
                             <td class="font-semibold">{{ $class->name }}</td>
                             <td>{{ $class->grade_level }}</td>
                             <td>{{ $class->section ?? '-' }}</td>
+                            <td>{{ (int) ($class->capacity ?? 18) }}</td>
                             <td>{{ $class->homeroomTeacher?->name ?? '-' }}</td>
                             <td>{{ $class->description ?? '-' }}</td>
                             <td class="text-right">
@@ -415,8 +421,8 @@
                             </td>
                         </tr>
                         <tr x-show="editOpen" style="display:none;" class="bg-slate-50">
-                            <td colspan="6">
-                                <form method="POST" action="{{ route('users.classes.update', $class->id) }}" class="grid grid-cols-1 md:grid-cols-4 gap-3 p-3">
+                            <td colspan="7">
+                                <form method="POST" action="{{ route('users.classes.update', $class->id) }}" class="grid grid-cols-1 md:grid-cols-5 gap-3 p-3">
                                     @csrf @method('PUT')
                                     <div>
                                         <label class="block text-xs text-slate-600 mb-1">Sınıf Adı</label>
@@ -425,6 +431,10 @@
                                     <div>
                                         <label class="block text-xs text-slate-600 mb-1">Şube</label>
                                         <input name="section" value="{{ $class->section }}" class="w-full rounded-lg border-slate-300 text-sm" placeholder="A, B, C">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-600 mb-1">Sinif Mevcudu</label>
+                                        <input name="capacity" type="number" min="1" max="500" value="{{ (int) ($class->capacity ?? 18) }}" class="w-full rounded-lg border-slate-300 text-sm">
                                     </div>
                                     <div class="md:col-span-2 flex items-end gap-2">
                                         <button class="rounded-lg bg-blue-600 text-white px-3 py-2 text-sm">Güncelle</button>
@@ -435,7 +445,7 @@
                         </tr>
                         </tbody>
                     @empty
-                        <tbody><tr><td colspan="6">Sınıf kaydı yok.</td></tr></tbody>
+                        <tbody><tr><td colspan="7">Sınıf kaydı yok.</td></tr></tbody>
                     @endforelse
                 </table>
             </div>
@@ -583,3 +593,5 @@
         });
     </script>
 </x-app-layout>
+
+

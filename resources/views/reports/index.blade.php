@@ -205,7 +205,7 @@
                             <div class="mt-4 space-y-4">
                                 <div>
                                     <label class="mb-1 block text-sm text-slate-600">Kurum Adı</label>
-                                    <input type="text" name="school_name" value="{{ old('school_name', 'Özelsin Eğitim Kurumları') }}" class="w-full rounded-xl border-slate-300">
+                                    <input type="text" name="school_name" value="{{ old('school_name', 'Özelsin Koleji') }}" class="w-full rounded-xl border-slate-300">
                                 </div>
                             </div>
                         </article>
@@ -219,11 +219,11 @@
                                 </div>
                                 <div>
                                     <label class="mb-1 block text-sm text-slate-600">Sınav Saati</label>
-                                    <input type="text" name="exam_time" value="{{ old('exam_time') }}" class="w-full rounded-xl border-slate-300" placeholder="Örn: 10:30">
+                                    <input type="text" name="exam_time" value="{{ old('exam_time', '09.30') }}" class="w-full rounded-xl border-slate-300" placeholder="Örn: 10:30">
                                 </div>
                                 <div>
                                     <label class="mb-1 block text-sm text-slate-600">Adres</label>
-                                    <textarea name="exam_address" rows="4" class="w-full rounded-xl border-slate-300" placeholder="Örn: Merkez Kampüs, Mahalle / Sokak / No">{{ old('exam_address') }}</textarea>
+                                    <textarea name="exam_address" rows="4" class="w-full rounded-xl border-slate-300" placeholder="Örn: Merkez Kampüs, Mahalle / Sokak / No">{{ old('exam_address', "Tatlıkuyu Mahallesi, Ahmet Pembegüllü Blv. No:79/1, 41400\nGebze / KOCAELİ") }}</textarea>
                                 </div>
                             </div>
                         </article>
@@ -251,13 +251,17 @@
                             <div
                                 class="mt-4"
                                 data-room-class-list='@json(($examRoomClasses ?? collect())->values())'
-                                data-old-room-definitions='@json(old("room_definitions", ""))'
+                                data-old-room-definitions='@json(old("room_definitions", $defaultExamRoomDefinitions ?? ""))'
                                 data-room-rows-host
                             ></div>
                             <div class="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[120px_1fr_auto]">
                                 <select class="w-full rounded-xl border-slate-300" data-add-grade-select>
                                     <option value="">Kademe</option>
                                     <option value="5">5</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
                                     <option value="6">6</option>
                                     <option value="7">7</option>
                                     <option value="8">8</option>
@@ -269,12 +273,12 @@
                                 <select class="w-full rounded-xl border-slate-300" data-add-class-select></select>
                                 <button type="button" class="rounded-xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" data-add-class-btn>Sınıf Ekle</button>
                             </div>
-                            <input type="hidden" name="room_definitions" class="room-definitions-hidden" value="{{ old('room_definitions') }}" required>
+                            <input type="hidden" name="room_definitions" class="room-definitions-hidden" value="{{ old('room_definitions', $defaultExamRoomDefinitions ?? '') }}" required>
                         </article>
 
                         <article class="rounded-3xl border border-slate-200 p-5">
                             <h4 class="text-lg font-semibold text-slate-900">Belge Notu</h4>
-                            <textarea name="exam_notes" rows="10" class="mt-4 w-full rounded-2xl border-slate-300" placeholder="Öğrencinin sınav saatinden 15 dakika önce okulda hazır bulunması gerekmektedir.">{{ old('exam_notes') }}</textarea>
+                            <textarea name="exam_notes" rows="10" class="mt-4 w-full rounded-2xl border-slate-300" placeholder="Öğrencinin sınav saatinden 15 dakika önce okulda hazır bulunması gerekmektedir.">{{ old('exam_notes', "*25 Mayıs Pazar günü yapılacak sınavımız, birinci oturum 09.30'da, ikinci oturum 11.30'ta başlayacaktır.\n* Sözel alanda 50 sorudan oluşan birinci oturum 75 dakika, sayısal alanda 40 sorudan oluşan ikinci oturum 80 dakika olarak uygulanacaktır.\n* Bu sınav, 15 Haziran günü yapılacak olan LGS ile birebir uyumlu sınavdır.\n* Sınav başlamadan en az 15 dakika öncesinde ÖZELSİN KOLEJİ KAMPÜSÜ sınav yerinizde olunuz.\n* Tüm öğrencilerimize başarılar dileriz.") }}</textarea>
                         </article>
                     </div>
 
@@ -555,16 +559,34 @@
 
         function parseRoomDefinitionsMap(rawText) {
             const out = new Map();
-            String(rawText || '').split(/\r?\n/).forEach((line) => {
+            let normalizedRaw = String(rawText || '').trim();
+            if (
+                (normalizedRaw.startsWith('"') && normalizedRaw.endsWith('"')) ||
+                (normalizedRaw.startsWith("'") && normalizedRaw.endsWith("'"))
+            ) {
+                normalizedRaw = normalizedRaw.slice(1, -1);
+            }
+            normalizedRaw = normalizedRaw
+                .replace(/\\r\\n/g, '\n')
+                .replace(/\\n/g, '\n')
+                .replace(/\\r/g, '\n');
+
+            normalizedRaw.split(/\r?\n/).forEach((line) => {
                 const row = String(line || '').trim();
                 if (!row) return;
                 const parts = row.split('|');
                 const room = String(parts[0] || '').trim();
                 const cap = Math.max(0, parseInt(String(parts[1] || '0').trim(), 10) || 0);
                 if (!room) return;
-                out.set(room, cap);
+                out.set(normalizeRoomKey(room), cap);
             });
             return out;
+        }
+
+        function normalizeRoomKey(value) {
+            return String(value || '')
+                .toLocaleUpperCase('tr-TR')
+                .replace(/[^0-9A-ZÇĞİÖŞÜ]/g, '');
         }
 
         function normalizeRoomClassList(input) {
@@ -611,7 +633,7 @@
 
             const classList = normalizeRoomClassList(JSON.parse(host.getAttribute('data-room-class-list') || '[]'));
             const oldMap = parseRoomDefinitionsMap(host.getAttribute('data-old-room-definitions') || hidden.value || '');
-            const selectedSet = new Set((oldMap.size ? Array.from(oldMap.keys()) : classList).filter((n) => classList.includes(n)));
+            const selectedSet = new Set(classList);
 
             const renderAddOptions = () => {
                 if (!addSelect) return;
@@ -644,7 +666,9 @@
                 }
 
                 host.innerHTML = selectedRooms.map((roomName) => {
-                    const cap = oldMap.get(roomName) ?? 18;
+                    const normalizedRoomName = normalizeRoomKey(roomName);
+                    const cap = oldMap.get(normalizedRoomName)
+                        ?? 18;
                     const options = Array.from({ length: 60 }, (_, i) => i + 1)
                         .map((n) => `<option value="${n}" ${n === cap ? 'selected' : ''}>${n}</option>`)
                         .join('');
@@ -893,8 +917,10 @@
                         link.download = filename;
                         document.body.appendChild(link);
                         link.click();
-                        link.remove();
-                        window.URL.revokeObjectURL(blobUrl);
+                        window.setTimeout(() => {
+                            link.remove();
+                            window.URL.revokeObjectURL(blobUrl);
+                        }, 1500);
                         hideExamProgress();
                         return;
                     }
@@ -931,5 +957,3 @@
         });
     </script>
 </x-app-layout>
-
-

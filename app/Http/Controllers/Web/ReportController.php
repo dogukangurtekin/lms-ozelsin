@@ -19,6 +19,45 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 class ReportController extends Controller
 {
+    private const DEFAULT_EXAM_ROOM_CAPACITIES = [
+        '5A' => 22,
+        '5B' => 22,
+        '5C' => 20,
+        '6A' => 12,
+        '6B' => 12,
+        '6C' => 12,
+        '7A' => 11,
+        '7B' => 12,
+        '7C' => 12,
+        '8A' => 12,
+        '8B' => 12,
+        '8C' => 10,
+        '11A' => 16,
+        '12A' => 12,
+        '11B' => 9,
+        '10A' => 8,
+        '9A' => 6,
+        '10B' => 8,
+        '9B' => 8,
+        'Ispanyolca' => 8,
+        '4A' => 10,
+        '4B' => 8,
+        '4C' => 12,
+        '4D' => 9,
+        '4E' => 11,
+        '3A' => 11,
+        '3B' => 11,
+        '3C' => 18,
+        '3D' => 20,
+        '2A' => 19,
+        '2B' => 24,
+        '2C' => 12,
+        '2D' => 8,
+        '1A' => 24,
+        '1B' => 23,
+        '1C' => 23,
+    ];
+
     public function index()
     {
         $selectedClassIds = collect(request()->input('class_ids', []))
@@ -76,7 +115,7 @@ class ReportController extends Controller
         $studentRecords = $studentRecordsQuery->paginate(10)->withQueryString();
 
         $classes = SchoolClass::query()
-            ->select('id', 'name', 'grade_level')
+            ->select('id', 'name', 'grade_level', 'capacity')
             ->orderBy('grade_level')
             ->orderBy('name')
             ->get();
@@ -84,6 +123,17 @@ class ReportController extends Controller
             ->pluck('name')
             ->filter(fn($name) => is_string($name) && trim($name) !== '')
             ->values();
+        if ($examRoomClasses->isEmpty()) {
+            $examRoomClasses = collect(array_keys(self::DEFAULT_EXAM_ROOM_CAPACITIES));
+        }
+
+        $defaultExamRoomDefinitions = $classes
+            ->filter(fn($class) => is_string($class->name) && trim($class->name) !== '')
+            ->map(function ($class) {
+                $capacity = max(1, (int) ($class->capacity ?? self::DEFAULT_EXAM_ROOM_CAPACITIES[$class->name] ?? 18));
+                return trim((string) $class->name).'|'.$capacity;
+            })
+            ->implode("\n");
 
         $maxPeriod = (int) (TeacherSchedule::query()->max('period_no') ?? 0);
         $lessonCountOptions = collect(range(1, max(5, $maxPeriod)))->values();
@@ -125,6 +175,7 @@ class ReportController extends Controller
             ,'sortBy'
             ,'selectedFields'
             ,'reportFieldOptions'
+            ,'defaultExamRoomDefinitions'
         ));
     }
 
@@ -252,16 +303,15 @@ class ReportController extends Controller
 
         $placements = $this->buildExamPlacements($students, $rooms);
         $generatedAt = now();
-        $baseLogos = $this->resolveExamLogos();
         $payloadLogos = $this->extractLogoPayloadDataUris($request);
         $fileLogos = $this->extractLogoFileDataUris($request);
         $logos = [
-            'primary' => $payloadLogos['primary'] ?? $fileLogos['primary'] ?? $baseLogos['primary'],
-            'secondary' => $payloadLogos['secondary'] ?? $fileLogos['secondary'] ?? $baseLogos['secondary'],
+            'primary' => $payloadLogos['primary'] ?? $fileLogos['primary'] ?? null,
+            'secondary' => $payloadLogos['secondary'] ?? $fileLogos['secondary'] ?? null,
         ];
         // Iki logo da ayni olmasin; ikincisi bossa birincinin kopyasini verme.
         if (($logos['secondary'] ?? null) === ($logos['primary'] ?? null)) {
-            $logos['secondary'] = $baseLogos['secondary'] !== $logos['primary'] ? $baseLogos['secondary'] : null;
+            $logos['secondary'] = null;
         }
         $sessionOneRows = $this->parseSessionSubjects((string) ($data['session_one_subjects'] ?? ''));
         $sessionTwoRows = $this->parseSessionSubjects((string) ($data['session_two_subjects'] ?? ''));
