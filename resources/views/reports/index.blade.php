@@ -672,8 +672,8 @@
 
                 host.innerHTML = selectedRooms.map((roomName) => {
                     const normalizedRoomName = normalizeRoomKey(roomName);
-                    const cap = oldMap.get(normalizedRoomName)
-                        ?? dbCapacityMap.get(normalizedRoomName)
+                    const cap = dbCapacityMap.get(normalizedRoomName)
+                        ?? oldMap.get(normalizedRoomName)
                         ?? 18;
                     const options = Array.from({ length: 60 }, (_, i) => i + 1)
                         .map((n) => `<option value="${n}" ${n === cap ? 'selected' : ''}>${n}</option>`)
