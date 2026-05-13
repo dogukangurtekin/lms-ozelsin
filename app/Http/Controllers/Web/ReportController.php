@@ -134,6 +134,11 @@ class ReportController extends Controller
                 return trim((string) $class->name).'|'.$capacity;
             })
             ->implode("\n");
+        $examRoomCapacities = $classes
+            ->filter(fn($class) => is_string($class->name) && trim($class->name) !== '')
+            ->mapWithKeys(function ($class) {
+                return [trim((string) $class->name) => max(1, (int) ($class->capacity ?? 18))];
+            });
 
         $maxPeriod = (int) (TeacherSchedule::query()->max('period_no') ?? 0);
         $lessonCountOptions = collect(range(1, max(5, $maxPeriod)))->values();
@@ -176,6 +181,7 @@ class ReportController extends Controller
             ,'selectedFields'
             ,'reportFieldOptions'
             ,'defaultExamRoomDefinitions'
+            ,'examRoomCapacities'
         ));
     }
 

@@ -252,6 +252,7 @@
                                 class="mt-4"
                                 data-room-class-list='@json(($examRoomClasses ?? collect())->values())'
                                 data-old-room-definitions='@json(old("room_definitions", $defaultExamRoomDefinitions ?? ""))'
+                                data-room-capacity-map='@json($examRoomCapacities ?? [])'
                                 data-room-rows-host
                             ></div>
                             <div class="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[120px_1fr_auto]">
@@ -633,6 +634,10 @@
 
             const classList = normalizeRoomClassList(JSON.parse(host.getAttribute('data-room-class-list') || '[]'));
             const oldMap = parseRoomDefinitionsMap(host.getAttribute('data-old-room-definitions') || hidden.value || '');
+            const dbCapacityMapRaw = JSON.parse(host.getAttribute('data-room-capacity-map') || '{}');
+            const dbCapacityMap = new Map(
+                Object.entries(dbCapacityMapRaw).map(([name, cap]) => [normalizeRoomKey(name), Math.max(1, parseInt(String(cap || '18'), 10) || 18)])
+            );
             const selectedSet = new Set(classList);
 
             const renderAddOptions = () => {
@@ -668,6 +673,7 @@
                 host.innerHTML = selectedRooms.map((roomName) => {
                     const normalizedRoomName = normalizeRoomKey(roomName);
                     const cap = oldMap.get(normalizedRoomName)
+                        ?? dbCapacityMap.get(normalizedRoomName)
                         ?? 18;
                     const options = Array.from({ length: 60 }, (_, i) => i + 1)
                         .map((n) => `<option value="${n}" ${n === cap ? 'selected' : ''}>${n}</option>`)
