@@ -215,11 +215,11 @@
                             <div class="mt-4 space-y-4">
                                 <div>
                                     <label class="mb-1 block text-sm text-slate-600">Sınav Tarihi</label>
-                                    <input type="date" name="exam_date" value="{{ old('exam_date') }}" class="w-full rounded-xl border-slate-300" required>
+                                    <input type="date" name="exam_date" value="{{ old('exam_date', '2026-06-07') }}" class="w-full rounded-xl border-slate-300" required>
                                 </div>
                                 <div>
                                     <label class="mb-1 block text-sm text-slate-600">Sınav Saati</label>
-                                    <input type="text" name="exam_time" value="{{ old('exam_time', '09.30') }}" class="w-full rounded-xl border-slate-300" placeholder="Örn: 10:30">
+                                    <input type="text" name="exam_time" value="{{ old('exam_time', 'Sözel Bölüm 09.30 || Sayısal Bölüm 11.30') }}" class="w-full rounded-xl border-slate-300" placeholder="Örn: 10:30">
                                 </div>
                                 <div>
                                     <label class="mb-1 block text-sm text-slate-600">Adres</label>
@@ -279,7 +279,7 @@
 
                         <article class="rounded-3xl border border-slate-200 p-5">
                             <h4 class="text-lg font-semibold text-slate-900">Belge Notu</h4>
-                            <textarea name="exam_notes" rows="10" class="mt-4 w-full rounded-2xl border-slate-300" placeholder="Öğrencinin sınav saatinden 15 dakika önce okulda hazır bulunması gerekmektedir.">{{ old('exam_notes', "*25 Mayıs Pazar günü yapılacak sınavımız, birinci oturum 09.30'da, ikinci oturum 11.30'ta başlayacaktır.\n* Sözel alanda 50 sorudan oluşan birinci oturum 75 dakika, sayısal alanda 40 sorudan oluşan ikinci oturum 80 dakika olarak uygulanacaktır.\n* Bu sınav, 15 Haziran günü yapılacak olan LGS ile birebir uyumlu sınavdır.\n* Sınav başlamadan en az 15 dakika öncesinde ÖZELSİN KOLEJİ KAMPÜSÜ sınav yerinizde olunuz.\n* Tüm öğrencilerimize başarılar dileriz.") }}</textarea>
+                            <textarea name="exam_notes" rows="10" class="mt-4 w-full rounded-2xl border-slate-300" placeholder="Öğrencinin sınav saatinden 15 dakika önce okulda hazır bulunması gerekmektedir.">{{ old('exam_notes', "*7 Haziran Pazar günü yapılacak sınavımız, birinci oturum 09.30'da, ikinci oturum 11.30'ta başlayacaktır.\n* Sözel alanda 50 sorudan oluşan birinci oturum 75 dakika, sayısal alanda 40 sorudan oluşan ikinci oturum 80 dakika olarak uygulanacaktır.\n*Bu sınav, 13 Haziran günü yapılacak olan LGS ile birebir uyumlu sınavdır.\n*Sınav başlamadan en az 15 dakika öncesinde ÖZELSİN KOLEJİ KAMPÜSÜ sınav yerinizde olunuz.\n*Tüm öğrencilerimize başarılar dileriz.") }}</textarea>
                         </article>
                     </div>
 
