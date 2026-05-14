@@ -389,7 +389,7 @@ class ReportController extends Controller
             $names[] = preg_replace('/\s+/u', ' ', $candidate) ?: $candidate;
         }
 
-        return array_values(array_unique($names));
+        return array_values($names);
     }
 
     private function parseRoomDefinitions(string $input): array
